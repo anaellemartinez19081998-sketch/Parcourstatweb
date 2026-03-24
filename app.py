@@ -1,11 +1,12 @@
 import os
 import dotenv
 from flask import Flask, render_template, request, redirect, url_for
-from sqlalchemy import create_engine, text
 from flask_login import current_user, login_required
 from app.models.user import db, login, Favori
+from app.models.parcourstat import Formation, Etablissement, Discipline, TypeFormation, Region
 
 dotenv.load_dotenv(".env")
+
 
 app = Flask(__name__)
 
@@ -30,15 +31,11 @@ login.login_message = "Veuillez vous connecter pour accéder à cette page."
 with app.app_context():
     db.create_all()  # crée la table users si elle n'existe pas
 
-# Connexion pour les requêtes manuelles
-engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
-
 @app.route("/")
 def index():
-    with engine.connect() as conn:
-        total_formations = conn.execute(text('SELECT COUNT(*) FROM "ParcourStat".formation')).scalar()
-        total_etablissements = conn.execute(text('SELECT COUNT(*) FROM "ParcourStat".etablissement')).scalar()
-        total_regions = conn.execute(text('SELECT COUNT(*) FROM "ParcourStat".region')).scalar()
+    total_formations = Formation.query.count()
+    total_etablissements = Etablissement.query.count()
+    total_regions = Region.query.count()
 
     return render_template("index.html",
                            total_formations=total_formations,
@@ -51,37 +48,20 @@ def formations():
     recherche = request.args.get("recherche")
     page = request.args.get("page", 1, type=int)
     par_page = 50
-    offset = (page - 1) * par_page
 
-    conditions = []
+    query = Formation.query
+
     if selectivite == "true":
-        conditions.append("f.selectivite = true")
+        query = query.filter(Formation.selectivite == True)
     elif selectivite == "false":
-        conditions.append("f.selectivite = false")
+        query = query.filter(Formation.selectivite == False)
     if recherche:
-        conditions.append(f"f.nom ILIKE '%{recherche}%'")
+        query = query.filter(Formation.nom.ilike(f'%{recherche}%'))
 
-    where = "WHERE " + " AND ".join(conditions) if conditions else ""
-
-    query = f'''
-        SELECT f.id, f.nom, e.nom as etablissement, f.selectivite
-        FROM "ParcourStat".formation f
-        JOIN "ParcourStat".etablissement e ON f.etablissement_id = e.id
-        {where}
-        LIMIT {par_page} OFFSET {offset}
-    '''
-
-    count_query = f'''
-        SELECT COUNT(*) FROM "ParcourStat".formation f
-        {where}
-    '''
-
-    with engine.connect() as conn:
-        result = conn.execute(text(query))
-        formations = [dict(row._mapping) for row in result]
-        total = conn.execute(text(count_query)).scalar()
-
+    total = query.count()
     total_pages = (total // par_page) + 1
+
+    formations = query.offset((page - 1) * par_page).limit(par_page).all()
 
     return render_template("formations.html",
                            formations=formations,
@@ -92,19 +72,7 @@ def formations():
 
 @app.route("/formation/<int:id>")
 def formation_detail(id):
-    with engine.connect() as conn:
-        result = conn.execute(text('''
-            SELECT f.id, f.nom, f.selectivite, f.coordonnees_gps_formation,
-                   e.nom as etablissement, e.statut, e.adresse, e.site_web,
-                   t.nom as type_formation,
-                   d.nom as discipline
-            FROM "ParcourStat".formation f
-            JOIN "ParcourStat".etablissement e ON f.etablissement_id = e.id
-            JOIN "ParcourStat".types_formations t ON f.type_formation_id = t.id
-            JOIN "ParcourStat".discipline d ON f.discipline_id = d.id
-            WHERE f.id = :id
-        '''), {"id": id})
-        formation = dict(result.mappings().first())
+    formation = Formation.query.get_or_404(id)
 
     est_favori = False
     if current_user.is_authenticated:
@@ -154,16 +122,9 @@ def mes_favoris():
     
     formations = []
     for favori in favoris:
-        with engine.connect() as conn:
-            result = conn.execute(text('''
-                SELECT f.id, f.nom, e.nom as etablissement, f.selectivite
-                FROM "ParcourStat".formation f
-                JOIN "ParcourStat".etablissement e ON f.etablissement_id = e.id
-                WHERE f.id = :id
-            '''), {"id": favori.formation_id})
-            formation = result.mappings().first()
-            if formation:
-                formations.append(dict(formation))
+        formation = Formation.query.get(favori.formation_id)
+        if formation:
+            formations.append(formation)
     
     return render_template("mes_favoris.html", formations=formations)
 

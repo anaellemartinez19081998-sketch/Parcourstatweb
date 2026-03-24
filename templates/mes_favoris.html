@@ -19,9 +19,9 @@
         {% for f in formations %}
         <tr>
             <td><a href="/formation/{{ f.id }}" class="text-decoration-none">{{ f.nom[:60] }}{% if f.nom|length > 60 %}...{% endif %}</a></td>
-            <td>{{ f.etablissement }}</td>
-            <td>{{ "Oui" if f.selectivite else "Non" }}</td>
-            <td><a href="/favori/supprimer/{{ f.id }}" class="btn btn-outline-danger btn-sm">🗑️ Retirer</a></td>
+<td>{{ f.etablissement.nom if f.etablissement else "—" }}</td>
+<td>{{ "Oui" if f.selectivite else "Non" }}</td>
+<td><a href="/favori/supprimer/{{ f.id }}" class="btn btn-outline-danger btn-sm">🗑️ Retirer</a></td>
         </tr>
         {% endfor %}
     </tbody>
