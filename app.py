@@ -287,6 +287,12 @@ def mes_favoris():
     
     return render_template("mes_favoris.html", formations=formations)
 
+"""
+    Blueprint afin de faire le renvoie vers nos routes stockées dans des fichiers individuelles.
+
+    Cela permet de respecter l'aspect modulaire de Flask et d'en tirer partie. 
+"""
+
 from app.routes.auth import auth
 app.register_blueprint(auth)
 
