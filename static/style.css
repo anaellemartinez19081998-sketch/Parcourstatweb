@@ -169,6 +169,7 @@ h2, h4, h5 {
     text-transform: uppercase;
     font-size: 0.8rem;
     border-bottom: 1px solid var(--rouge) !important; /* rouge : seul accent conservé */
+    color: var(--blanc) !important;
 }
 
 .card-footer {
@@ -381,3 +382,103 @@ footer {
 td, th             { color: var(--blanc) !important; }
 .form-control,
 .form-control:focus { color: var(--blanc) !important; }
+
+/*style du menu déroulant des formations sur la page graphiques*/
+
+/* 1. Le conteneur principal (le bouton du menu) */
+.choices__inner {
+    background-color: var(--fond-carte) !important;
+    border: 1px solid var(--bordure) !important;
+    color: var(--blanc) !important;
+    border-radius: 0 !important;
+}
+
+/* 2. L'élément sélectionné affiché dans le champ */
+.choices__list--single .choices__item {
+    background: none !important;
+    background-color: transparent !important;
+    color: var(--blanc) !important;
+}
+
+/* 3. La liste déroulante (le menu qui s'ouvre) */
+.choices__list--dropdown {
+    background-color: var(--fond-carte) !important;
+    border: 1px solid var(--bleu-clair) !important;
+    z-index: 9999 !important; /* Pour passer devant le footer */
+}
+
+/* 4. TOUTES les options de la liste (on retire tout fond par défaut) */
+.choices__list--dropdown .choices__item {
+    background-color: transparent !important;
+    color: var(--blanc) !important;
+    border: none !important;
+}
+
+/* 5. Effet au SURVOL (Highlight) : on met juste un léger gris pour voir où on est */
+.choices__list--dropdown .choices__item--selectable.is-highlighted {
+    background-color: rgba(255, 255, 255, 0.1) !important; 
+    color: var(--blanc) !important;
+}
+
+/* 6. L'option déjà sélectionnée dans la liste (on retire le bleu aussi) */
+.choices__list--dropdown .choices__item--selectable.is-selected {
+    background-color: transparent !important;
+    color: var(--bleu-clair) !important; /* On met juste le texte en bleu clair pour savoir qu'il est choisi */
+}
+
+/* 7. Gestion de l'empilement pour passer devant le footer */
+.choices {
+    position: relative;
+    z-index: 1050 !important; 
+}
+
+footer {
+    z-index: 1 !important; /* On s'assure que le footer reste derrière */
+}
+
+/* Boutons de situation (Candidats/Admis) */
+.btn-outline-dark {
+    border-color: var(--bleu-clair) !important;
+    color: var(--blanc) !important; /* Texte toujours blanc */
+    background: rgba(0, 71, 196, 0.1);
+    font-weight: 700;
+}
+
+/* État quand le bouton est COCHÉ (sélectionné) */
+.btn-check:checked + .btn-outline-dark {
+    background-color: var(--bleu-clair) !important;
+    color: var(--blanc) !important;
+    box-shadow: var(--glow-bleu);
+    border-color: var(--blanc) !important;
+}
+
+.btn-outline-dark:hover {
+    background-color: rgba(0, 71, 196, 0.3);
+    color: var(--blanc) !important;
+}
+
+/* Titres des graphiques (h6 dans les cartes) */
+.card-title {
+    color: var(--blanc) !important;
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+/* Texte à l'intérieur du Résumé */
+#resume {
+    color: var(--blanc) !important;
+    font-size: 1.1rem; /* Un peu plus grand pour la lisibilité */
+}
+
+#resume strong {
+    color: #4d8fff; /* Bleu néon pour les labels importants (Boursiers, Femmes, etc.) */
+    text-shadow: 0 0 5px rgba(77, 143, 255, 0.4);
+}
+
+/* Suppression du gris "muted" dans le résumé */
+#resume .text-muted {
+    color: var(--gris) !important;
+}
