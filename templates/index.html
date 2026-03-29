@@ -3,8 +3,11 @@
 {% block title %}Accueil — ParcourStat{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 <div class="row text-center mt-4">
     <h1 class="mb-4">Bienvenue sur ParcourStat 📊</h1>
+    
     <div class="col-md-4">
         <div class="card shadow-sm">
             <div class="card-body">
@@ -30,4 +33,131 @@
         </div>
     </div>
 </div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap">
+                <h5 class="mb-0 font-weight-bold">Géolocalisation des Établissements</h5>
+                
+                <div class="form-inline mt-2 mt-md-0">
+                    <input type="text" id="nameSearch" class="form-control form-control-sm mr-2" 
+                           placeholder="Rechercher par nom..." style="min-width: 250px;" 
+                           list="etablissementsList" autocomplete="off">
+                    
+                    <datalist id="etablissementsList"></datalist>
+                    
+                    <label for="regionFilter" class="mr-2 mb-0">Région :</label>
+                    <select id="regionFilter" class="form-control form-control-sm" style="min-width: 200px;">
+                        <option value="all">Toutes les régions</option>
+                        {% for r in regions %}
+                            <option value="{{ r.nom }}">{{ r.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="card-body p-0">
+                <div id="map" style="height: 600px; width: 100%;"></div>
+            </div>
+            
+            <div class="card-footer bg-light py-2">
+                <small class="text-muted">
+                    <span class="mr-3"><span style="color:#0d6efd">●</span> Public</span>
+                    <span class="mr-3"><span style="color:#6f42c1">●</span> Privé</span>
+                    <i class="fas fa-mouse-pointer ml-2"></i> Cliquez sur un point pour voir les formations.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div> <span style="color: red;"> AVERTISSEMENT : </span> les points de Géolocalisation ne sont pas exact. Ils sont issus d'une moyenne calculée entre les différentes coordonnées de chaque formation d'un établissement car nous ne disposions pas des coordonnées de chaque établissement. </div>
+
+<div id="data-holder" 
+     data-formations='{{ points_carte | tojson | safe }}' 
+     style="display:none;">
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // 1. Initialisation de la carte
+    var map = L.map('map').setView([46.6033, 1.8883], 5);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // 2. Récupération des données
+    var dataElement = document.getElementById('data-holder');
+    var etablissements = JSON.parse(dataElement.getAttribute('data-formations'));
+    var markersGroup = new L.featureGroup().addTo(map);
+
+    // 3. Remplissage de l'auto-complétion (datalist)
+    var datalist = document.getElementById('etablissementsList');
+    var nomsUniques = [...new Set(etablissements.map(e => e.etablissement))].sort();
+
+    nomsUniques.forEach(function(nom) {
+        var option = document.createElement('option');
+        option.value = nom;
+        datalist.appendChild(option);
+    });
+
+    // 4. Fonction de filtrage croisé (Région + Nom)
+    function updateMap() {
+        var regionFilter = document.getElementById('regionFilter').value;
+        var nameQuery = document.getElementById('nameSearch').value.toLowerCase().trim();
+
+        markersGroup.clearLayers();
+
+        etablissements.forEach(function(e) {
+            var matchRegion = (regionFilter === "all" || e.region === regionFilter);
+            var matchName = (nameQuery === "" || e.etablissement.toLowerCase().includes(nameQuery));
+
+            if (matchRegion && matchName) {
+                var pointColor = (e.statut && e.statut.toLowerCase().includes('public')) ? "#0d6efd" : "#6f42c1";
+                var radiusSize = 6 + Math.min(e.count, 10);
+
+                var popupContent = "<strong>" + e.etablissement + "</strong><br>";
+                popupContent += "<small>" + e.statut + "</small><br><br>";
+                popupContent += "<b>" + e.count + " formations :</b><ul style='padding-left:15px; font-size:12px;'>";
+                e.liste.forEach(function(f) { popupContent += "<li>" + f + "</li>"; });
+                if (e.total_plus > 0) { popupContent += "<i>+ " + e.total_plus + " autres</i>"; }
+                popupContent += "</ul>";
+
+                var circle = L.circleMarker([e.lat, e.lng], {
+                    radius: radiusSize,
+                    fillColor: pointColor,
+                    color: "#fff",
+                    weight: 1,
+                    fillOpacity: 0.8
+                }).bindPopup(popupContent);
+
+                markersGroup.addLayer(circle);
+            }
+        });
+
+        // Zoom automatique sur les résultats
+        if (markersGroup.getLayers().length > 0) {
+            map.fitBounds(markersGroup.getBounds().pad(0.2));
+        }
+    }
+
+    // 5. Écouteurs d'événements
+    document.getElementById('regionFilter').addEventListener('change', updateMap);
+    document.getElementById('nameSearch').addEventListener('input', updateMap);
+
+    // 6. GeoJSON décoratif
+    fetch('/api/geojson')
+        .then(response => response.json())
+        .then(data => {
+            L.geoJSON(data, {
+                style: { color: "#0d6efd", weight: 1, fillOpacity: 0.02, interactive: false }
+            }).addTo(map);
+        });
+
+    // Affichage initial
+    updateMap();
+</script>
 {% endblock %}

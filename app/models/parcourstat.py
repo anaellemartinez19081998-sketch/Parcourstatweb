@@ -20,7 +20,9 @@ class Departement(db.Model):
 
     code = db.Column(db.Integer, primary_key=True)
     nom = db.Column(db.Text)
-    region_id = db.Column(db.Integer, db.ForeignKey('ParcourStat.academie.id'))
+    region_id = db.Column(db.Integer, db.ForeignKey('ParcourStat.region.id'))
+
+    region = db.relationship('Region', backref='departements')
 
 class Commune(db.Model):
     __tablename__ = 'commune'
@@ -29,6 +31,9 @@ class Commune(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nom = db.Column(db.Text)
     departement_id = db.Column(db.Integer, db.ForeignKey('ParcourStat.departement.code'))
+
+    #Relation
+    departement = db.relationship('Departement', backref='communes')
 
 class TypeFormation(db.Model):
     __tablename__ = 'types_formations'
@@ -59,6 +64,10 @@ class Etablissement(db.Model):
     url_image = db.Column(db.Text)
     commune_id = db.Column(db.Integer, db.ForeignKey('ParcourStat.commune.id'))
     academie_id = db.Column(db.Integer, db.ForeignKey('ParcourStat.academie.id'))
+
+
+    commune = db.relationship('Commune', backref='etablissements')
+    academie = db.relationship('Academie', backref='etablissements')
 
 class Formation(db.Model):
     __tablename__ = 'formation'

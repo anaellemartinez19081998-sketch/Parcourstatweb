@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import login_required
 from app.models.user import db 
-from app.models.parcourstat import Formation, Etablissement, Admissions, Candidatures
+from app.models.parcourstat import Formation, Etablissement, Admission, Candidature
 from sqlalchemy import func, or_, case, and_, not_
 from app.models.formulaire import FiltreGraphique
 from app.utils.transformation import clean_arg
@@ -36,45 +36,45 @@ def graphiques_donnees(formation_id, annee, situation):
     if not formation_choisie:
         return jsonify({})
 
-        # si l'utilisateur choisit la situation 'admis', sélection des données de la table admissions qui servent à remplir les 4 graphiques
+        # si l'utilisateur choisit la situation 'admis', sélection des données de la table Admission qui servent à remplir les 4 graphiques
     if situation == 'admis':
             # pour chaque colonne sélectionnée, on appelle la fonction sum() pour avoir la somme des données pour une formation choisie, peu importe son établissement
             # on définit également un alias pour chaque colonne avec label()
             # somme des lignes pour uen formation, puis calcul d'un pourcentage du total des lignes agrégées
             #on agrège ici les formations ayant le même nom pour l'année choisie
         stats = db.session.query(
-            func.sum(Admissions.ea_nb).label('total'),
-            func.sum(Admissions.ea_bn_b).label('boursiers'),
-            func.sum(Admissions.ea_nb_g).label('generale'),
-            func.sum(Admissions.ea_nb_t).label('techno'),
-            func.sum(Admissions.ea_nb_p).label('pro'),
-            func.sum(Admissions.ea_nb_sm).label('sans_mention'),
-            func.sum(Admissions.ea_nb_ab).label('assez_bien'),
-            func.sum(Admissions.ea_nb_b).label('bien'),
-            func.sum(Admissions.ea_nb_tb).label('tres_bien'),
-            func.avg(Admissions.ea_pc).label('capacite'), # utilisation de avg() ici puisque la données est déjà un pourcentage dans la table admission
-            func.avg(Admissions.pa_f).label('femmes') # même chose ici, utilisation de avg()
+            func.sum(Admission.ea_nb).label('total'),
+            func.sum(Admission.ea_bn_b).label('boursiers'),
+            func.sum(Admission.ea_nb_g).label('generale'),
+            func.sum(Admission.ea_nb_t).label('techno'),
+            func.sum(Admission.ea_nb_p).label('pro'),
+            func.sum(Admission.ea_nb_sm).label('sans_mention'),
+            func.sum(Admission.ea_nb_ab).label('assez_bien'),
+            func.sum(Admission.ea_nb_b).label('bien'),
+            func.sum(Admission.ea_nb_tb).label('tres_bien'),
+            func.avg(Admission.ea_pc).label('capacite'), # utilisation de avg() ici puisque la données est déjà un pourcentage dans la table admission
+            func.avg(Admission.pa_f).label('femmes') # même chose ici, utilisation de avg()
         ).join(Formation).filter(
             Formation.nom == formation_choisie.nom, # ce filtre sélectionne toutes les formations ayant le même nom et permet de les agréger, peu importe l'établissement
-            Admissions.annee == annee # filtre qui permet d'obtenir les données uniquement pour la date choisie par l'utilisateur 
+            Admission.annee == annee # filtre qui permet d'obtenir les données uniquement pour la date choisie par l'utilisateur 
         ).first() # une seule ligne de données retournée pour chaque requête
     else:
-        #si l'utilisateur choisit une autre situation, c'est-à-dire 'candidats', sélecton des données de la tables candidatures
+        #si l'utilisateur choisit une autre situation, c'est-à-dire 'candidats', sélecton des données de la tables Candidature
         stats = db.session.query(
-            func.sum(Candidatures.et_c).label('total'),
-            func.sum(Candidatures.ec_b_nb).label('boursiers'),
-            func.sum(Candidatures.ec_nb_g).label('generale'),
-            func.sum(Candidatures.ec_nb_t).label('techno'),
-            func.sum(Candidatures.ec_nb_p).label('pro'),
-            func.sum(Candidatures.et_cf).label('femmes'), # utilisation de sum() car il s'agit d'un chiffre brut dans la table candidatures, et non un pourcetage comme dans la table admissions
-            db.literal(None).label('sans_mention'), #utilisation de db.literal(None) pour les colonnes suivantes car les données n'existent pas pour la table candidatures : les résultats du bac ne sont pas encore disponibles au moment des candidatures. On garde quand même les requêtes qui retournen None pour éviter les erreurs et garder la même structure. 
+            func.sum(Candidature.et_c).label('total'),
+            func.sum(Candidature.ec_b_nb).label('boursiers'),
+            func.sum(Candidature.ec_nb_g).label('generale'),
+            func.sum(Candidature.ec_nb_t).label('techno'),
+            func.sum(Candidature.ec_nb_p).label('pro'),
+            func.sum(Candidature.et_cf).label('femmes'), # utilisation de sum() car il s'agit d'un chiffre brut dans la table Candidature, et non un pourcetage comme dans la table Admission
+            db.literal(None).label('sans_mention'), #utilisation de db.literal(None) pour les colonnes suivantes car les données n'existent pas pour la table Candidature : les résultats du bac ne sont pas encore disponibles au moment des Candidature. On garde quand même les requêtes qui retournen None pour éviter les erreurs et garder la même structure. 
             db.literal(None).label('assez_bien'),
             db.literal(None).label('bien'),
             db.literal(None).label('tres_bien'),
             db.literal(None).label('capacite')
         ).join(Formation).filter(
                 Formation.nom == formation_choisie.nom,
-                Candidatures.annee == annee
+                Candidature.annee == annee
         ).first() 
         
 
@@ -98,7 +98,7 @@ def graphiques_donnees(formation_id, annee, situation):
             return None
         return result
     
-    #le nombre de femmes est déjà un pourcentage dans la table admissions, mais c'est un chiffre brut dans la table candidatures. 
+    #le nombre de femmes est déjà un pourcentage dans la table Admission, mais c'est un chiffre brut dans la table Candidature. 
     # On crée donc ici un calcul de pourcentage selon la table qui est requêtée.
     pct_femmes = round(stats.femmes, 1) if situation == 'admis' else pct(stats.femmes)
        
@@ -172,11 +172,11 @@ def graphiques():
         form.formation_id.data = formation_id
         resultat = db.session.query(Formation.nom).filter(Formation.id == formation_id).first()
         formation_nom = resultat[0] if resultat else None        # on vérifie si des données existent pour chaque année (2018 ou 2024) en renvoyant la première ligne de données avec first()
-        a2018 = db.session.query(Admissions.annee).join(Formation).filter(
-            Formation.nom == formation_nom, Admissions.annee == 2018
+        a2018 = db.session.query(Admission.annee).join(Formation).filter(
+            Formation.nom == formation_nom, Admission.annee == 2018
         ).first()
-        a2024 = db.session.query(Admissions.annee).join(Formation).filter(
-            Formation.nom == formation_nom, Admissions.annee == 2024
+        a2024 = db.session.query(Admission.annee).join(Formation).filter(
+            Formation.nom == formation_nom, Admission.annee == 2024
         ).first()
 
         #on définit la liste des années disponibles pour la formation choisie
@@ -202,22 +202,22 @@ def graphiques():
             Etablissement.nom,
             Etablissement.adresse,
             Etablissement.site_web,
-            Admissions.ea_nb.label('nb_admis'),
-            Candidatures.et_c.label('nb_candidats'),
+            Admission.ea_nb.label('nb_admis'),
+            Candidature.et_c.label('nb_candidats'),
 
             #Utilisation d'un case pour calculer le taux d'admission d'une formation choisie dans chaque établissement.
             #Si le nombre de candidats existe et est supérieur à 0, on divise le nombre d'admis par le nombre de candidats multiplié par 100
             #si le nombre de candidats n'existe pas, le calcul n'est pas effectué
 
             case(
-        (Candidatures.et_c > 0, 
-         func.round((Admissions.ea_nb.cast(db.Numeric) / Candidatures.et_c) * 100, 1)),
+        (Candidature.et_c > 0, 
+         func.round((Admission.ea_nb.cast(db.Numeric) / Candidature.et_c) * 100, 1)),
         else_=None
     ).label('taux_admission')
     #récupération des établissements
     ).join(Formation, Etablissement.id == Formation.etablissement_id)\
-    .outerjoin(Admissions, and_(Admissions.formation_id == Formation.id, Admissions.annee == annee_selectionnee))\
-    .outerjoin(Candidatures, and_(Candidatures.formation_id == Formation.id, Candidatures.annee == annee_selectionnee))\
+    .outerjoin(Admission, and_(Admission.formation_id == Formation.id, Admission.annee == annee_selectionnee))\
+    .outerjoin(Candidature, and_(Candidature.formation_id == Formation.id, Candidature.annee == annee_selectionnee))\
     .filter(Formation.nom == infos.nom)\
     .order_by(Etablissement.nom).all()
 

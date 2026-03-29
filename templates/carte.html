@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %} <!-- Permet d'intégrer tout le template suivant dans l'architecture de base de notre site. -->
+<div class="container-fluid mt-4 px-4">
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-7">
+            <h2 class="h4 text-light"><i class="fas fa-map-marked-alt me-2"></i>Analyse Territoriale ParcourStat</h2>
+            <p class="text-light-50 mb-0">Visualisation des indicateurs par région. Chosissez une thématique et une année afin d'activer la carte.</p>
+        </div> <!-- Contenu qui nous servira de titre de pour ce block content-->
+        
+        <div class="col-md-5"> <!-- Div qui servira de filtre sur l'année et le type de formations visée. -->
+            <form action="{{ url_for('cartes.afficher_carte') }}" method="GET" id="filterForm" class="d-flex align-items-center bg-dark p-2 rounded border border-secondary shadow-sm">
+                <input type="hidden" name="indic" id="hidden-indic" value="{{ active_indic }}">
+                <input type="hidden" name="year" id="hidden-year" value="{{ active_year }}">
+                
+                <i class="fas fa-filter text-info ms-2 me-3"></i>
+                <select name="type_id" class="form-select form-select-sm bg-dark text-light border-0" onchange="this.form.submit()">
+                    <option value="">Toutes les formations</option> <!-- On créer une option toutes les formations pour afficher le total des données, sans filtre. -->
+                    {% for t in types %}
+                    <option value="{{ t.id }}" {% if active_type == t.id %}selected{% endif %}>{{ t.nom }}</option> <!-- Filtre sur chaque type de formation -->
+                    {% endfor %}
+                </select>
+                {% if active_type %}
+                    <a href="{{ url_for('cartes.afficher_carte', indic=active_indic, year=active_year) }}" class="btn btn-sm btn-outline-danger ms-2"><i class="fas fa-times"></i></a> <!-- Filtre sur chaque année disponible. -->
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="row mb-3"> <!-- Création des boutons qui vont  -->
+        <div class="col-md-6 text-start">
+            <div class="btn-group shadow-sm" role="group">
+                <button type="button" class="btn btn-outline-primary" id="btn-2024" onclick="updateYear('2024', this)">2024</button>
+                <button type="button" class="btn btn-outline-primary" id="btn-2018" onclick="updateYear('2018', this)">2018</button>
+            </div>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group shadow-sm bg-dark p-1 rounded border border-secondary">
+                <button class="btn btn-outline-light px-3" id="ind-filles" onclick="updateIndicator('filles', this)">% Femmes admises </button>
+                <button class="btn btn-outline-light px-3" id="ind-boursiers" onclick="updateIndicator('boursiers', this)">% Boursiers admis</button>
+                <button class="btn btn-outline-light px-3" id="ind-count" onclick="updateIndicator('count', this)">Nombre de formations</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="no-data-alert" class="alert alert-info border-0 shadow-sm mb-3 d-none animate__animated animate__fadeIn bg-info text-dark">
+        <i class="fas fa-info-circle me-2"></i> Indicateur non disponible pour 2018. Données non prises en comptes dans la construction du jeu de donnée de 2018.
+    </div>
+
+
+
+
+
+    <div class="row">
+        <div class="col-md-9">
+            <div id="map" style="height: 70vh; width: 100%; border-radius: 15px; border: 1px solid #444; background-color: #1a1a1a;"></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 bg-dark text-light border border-secondary">
+                <div class="card-header bg-dark border-bottom border-secondary pt-3">
+                    <h5 class="h6 mb-0 text-uppercase fw-bold text-info">Légende</h5>
+                </div>
+                <div class="card-body">
+                    <div id="static-legend" class="legend-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script id="region-data" type="application/json">{{ stats | tojson | safe }}</script>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // --- ÉTAT GLOBAL INITIALISÉ PAR FLASK ---
+    var currentYear = "{{ active_year }}"; 
+    var currentIndicator = "{{ active_indic }}"; 
+    var geojsonLayer;
+    var regionStats = JSON.parse(document.getElementById('region-data').textContent);
+
+    const config = {
+        filles: { 
+            title: "Part des femmes admises", 
+            // Échelle de 40% à 60% avec un pas de 2%
+            grades: [40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60], 
+            
+            colors: [
+                '#313695', // < 40% (Bleu profond)
+                '#4575b4', // 40-42%
+                '#74add1', // 42-44%
+                '#abd9e9', // 44-46%
+                '#e0f3f8', // 46-48%
+                '#ffffbf', // 48-50% (Bascule : Jaune très clair)
+                '#fee090', // 50-52%
+                '#fdae61', // 52-54%
+                '#f46d43', // 54-56%
+                '#d73027', // 56-58%
+                '#a50026', // 58-60%
+                '#67001f'  // > 60% (Rouge sang)
+            ],
+            unit: "%", 
+            has2018: true
+        },
+        boursiers: { 
+            title: "Part des boursiers admis", 
+            // Palier de 5 en 5, de 5% jusqu'à 30%
+            grades: [5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29], 
+
+            colors: [
+                '#f7fcf5', // < 5%
+                '#eaf7e4', // 5-7%
+                '#daf0d2', // 7-9%
+                '#c8e8bf', // 9-11%
+                '#b4e0ab', // 11-13%
+                '#9dd795', // 13-15%
+                '#82cd7f', // 15-17% (Zone critique)
+                '#63c169', // 17-19% (Zone critique)
+                '#44b254', // 19-21%
+                '#2da145', // 21-23%
+                '#1a8e3a', // 23-25%
+                '#0a7a30', // 25-27%
+                '#006627', // 27-29%
+                '#004d1d'  // > 29% (Vert forêt profond)
+            ], 
+            unit: "%", 
+            has2018: true
+        },
+        count: { 
+            title: "Nombre de formations", 
+            // On commence par 50, ce qui crée automatiquement le palier < 50
+            grades: [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000], 
+            
+            // Palette de 21 couleurs : Dégradé de bleus vifs et équilibrés
+            // On évite les extrêmes (trop blanc ou trop noir) pour le confort visuel
+            colors: [
+                '#f0f9e8', // Index 0 : < 50
+                '#e0f3f8', // 50-100
+                '#d1eeea', // 100-150
+                '#c6dbef', // 150-200
+                '#b3d2e9', // 200-250
+                '#9ecae1', // 250-300
+                '#85bcdb', // 300-350
+                '#6baed6', // 350-400
+                '#54a4d0', // 400-450
+                '#4292c6', // 450-500
+                '#3082be', // 500-550
+                '#2171b5', // 550-600
+                '#1d6bb0', // 600-650
+                '#1865ab', // 650-700
+                '#1360a6', // 700-750
+                '#0e5aa1', // 750-800
+                '#08559c', // 800-850
+                '#084f97', // 850-900
+                '#084992', // 900-950
+                '#08438d', // 950-1000
+                '#083d88'  // > 1000 (Dernière couleur, reste lumineuse)
+            ],
+            unit: "", 
+            has2018: true 
+        }
+    };
+
+    var map = L.map('map').setView([46.603354, 1.888334], 6);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' }).addTo(map);
+
+    function updateYear(year, btn) {
+        currentYear = year;
+        document.getElementById('hidden-year').value = year;
+        document.querySelectorAll('[id^="btn-"]').forEach(b => b.classList.replace('btn-primary', 'btn-outline-primary') || b.classList.remove('active'));
+        btn.classList.replace('btn-outline-primary', 'btn-primary');
+        btn.classList.add('active');
+        refreshMap();
+    }
+
+    function updateIndicator(indicator, btn) {
+        currentIndicator = indicator;
+        document.getElementById('hidden-indic').value = indicator;
+        document.querySelectorAll('[id^="ind-"]').forEach(b => {
+            b.classList.replace('btn-dark', 'btn-outline-light');
+            b.classList.remove('active');
+        });
+        btn.classList.replace('btn-outline-light', 'btn-dark');
+        btn.classList.add('active');
+        refreshMap();
+    }
+
+    function refreshMap() {
+        if (geojsonLayer) geojsonLayer.setStyle(style);
+        updateStaticLegend();
+        checkAlert();
+    }
+
+    // Fonctions de style et légende (identiques à ton code précédent)...
+    function getCategoricalColor(d) {
+        const c = config[currentIndicator];
+        if (currentYear === "2018" && !c.has2018) return '#444';
+        for (let i = 0; i < c.grades.length; i++) { if (d < c.grades[i]) return c.colors[i]; }
+        return c.colors[c.colors.length - 1];
+    }
+
+    function updateStaticLegend() {
+        const c = config[currentIndicator];
+        const container = document.getElementById('static-legend');
+        if (currentYear === "2018" && !c.has2018) {
+            container.innerHTML = `<div class="text-center py-4 text-light-50">Données indisponibles</div>`;
+            return;
+        }
+        let html = `<p class="fw-bold small text-light mb-3 text-uppercase">${c.title}</p>`;
+        html += `<div class="d-flex align-items-center mb-2"><div style="background:${c.colors[0]}; width:20px; height:20px; margin-right:10px;"></div><span class="small text-light">< ${c.grades[0]}${c.unit}</span></div>`;
+        for (let i = 0; i < c.grades.length - 1; i++) {
+            html += `<div class="d-flex align-items-center mb-2"><div style="background:${c.colors[i+1]}; width:20px; height:20px; margin-right:10px;"></div><span class="small text-light">${c.grades[i]} - ${c.grades[i+1]}${c.unit}</span></div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function checkAlert() {
+        const alertBox = document.getElementById('no-data-alert');
+        (currentYear === "2018" && !config[currentIndicator].has2018) ? alertBox.classList.remove('d-none') : alertBox.classList.add('d-none');
+    }
+
+    function normalize(str) { return str ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-\s]/g, "").trim() : ""; }
+
+    function style(feature) {
+        const nomGeo = normalize(feature.properties.nom || feature.properties.NOM_REGION || "");
+        let val = 0;
+        for (let key in regionStats) { if (normalize(key) === nomGeo) { val = regionStats[key][currentYear][currentIndicator] || 0; break; } }
+        return { fillColor: getCategoricalColor(val), weight: 1, opacity: 1, color: '#333', fillOpacity: 0.8 };
+    }
+
+    // INITIALISATION AU CHARGEMENT
+    window.onload = function() {
+        // Appliquer l'état visuel aux boutons selon les valeurs de Flask
+        updateIndicator(currentIndicator, document.getElementById('ind-' + currentIndicator));
+        updateYear(currentYear, document.getElementById('btn-' + currentYear));
+
+        fetch("{{ url_for('static', filename='Regions_France.geojson') }}")
+            .then(res => res.json())
+            .then(data => {
+                geojsonLayer = L.geoJSON(data, {
+                    style: style,
+                    onEachFeature: function (feature, layer) {
+                        layer.on('mouseover', function() {
+                            const nomGeo = normalize(feature.properties.nom || feature.properties.NOM_REGION);
+                            let match = null;
+                            for (let key in regionStats) { if (normalize(key) === nomGeo) { match = regionStats[key]; break; } }
+                            if (match) {
+                                const val = match[currentYear][currentIndicator] || 0;
+                                layer.bindTooltip(`<strong>${match.nom_reel}</strong>: ${val}${config[currentIndicator].unit}`, {sticky: true}).openTooltip();
+                            }
+                        });
+                    }
+                }).addTo(map);
+            });
+    };
+</script>
+{% endblock %}

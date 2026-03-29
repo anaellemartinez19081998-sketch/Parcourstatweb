@@ -23,18 +23,20 @@
             <a class="navbar-brand fw-bold" href="/">ParcourStat</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="/">Accueil</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/formations">Formations</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/comparaison">Comparaison</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{url_for('index')}}">Accueil</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{url_for('formations')}}">Formations</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{url_for('graphique.graphiques')}}">Formations</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{url_for('main.comparaison')}}">Comparaison</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('cartes.afficher_carte') }}">Cartes thématiques</a></li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item"><span class="nav-link text-light">👤 {{ current_user.username }}</span></li>
-                        <li class="nav-item"><a class="nav-link" href="/deconnexion">Se déconnecter</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/mes-favoris">❤️ Mes favoris</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{url_for('auth.deconnexion')}}">Se déconnecter</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{url_for('mes_favoris')}}">❤️ Mes favoris</a></li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="/connexion">Se connecter</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/inscription">S'inscrire</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{url_for('auth.connexion')}}">Se connecter</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{url_for('auth.inscription')}}">S'inscrire</a></li>
                     {% endif %}
                 </ul>
             </div>
