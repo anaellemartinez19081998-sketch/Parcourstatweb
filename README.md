@@ -1,7 +1,8 @@
-# Déploiement et utilisation de ParcourStat
+# Projet PacourStat : guide d'utilisation et description du projet.
 
 
-- [Déploiement et utilisation de ParcourStat](#déploiement-et-utilisation-de-parcourstat)
+- [Projet PacourStat : guide d'utilisation et description du projet.](#projet-pacourstat--guide-dutilisation-et-description-du-projet)
+  - [Le projet ParcourStat quelques mots :](#le-projet-parcourstat-quelques-mots-)
   - [Installer la base de données : guide](#installer-la-base-de-données--guide)
     - [Séparation des deux dossiers.](#séparation-des-deux-dossiers)
     - [Créer un environement virtuel exploitable.](#créer-un-environement-virtuel-exploitable)
@@ -17,6 +18,28 @@
     - [Volet de filtres](#volet-de-filtres)
     - [Visualisation et synthèse](#visualisation-et-synthèse)
     - [Architecture](#architecture)
+
+<br>
+<br>
+
+## Le projet ParcourStat quelques mots : 
+
+ParcourStat est un projet ambitieux de création d'une application permettant l'exploitabilité des données publiés par le Gouvernement français sur les résultats ParcourSup à l'issus de chaque campagne. 
+
+Ce projet part d'un constat : ces données publics et librement accessible sont peu exploitées. Leurs exploitation pourrait, au regard de leurs exhaustivité, permettre une meilleure compréhension et visions globale du système universitaire français. De plus, les jeux de données sont nombreux : il y en a un par année. Leurs croisements au sein d'un même outil peut permettre d'obtenir une vision globale permettant de comprendre l'évolution du système universitaire français face aux évolutions sociale et politique. 
+
+Pour cela, nous avons choisi d'exploiter, pour le moment, deux jeux de données : les résultats de ParcourSup de 2018 et de 2024. Cela nous permet de créer un outil de visualisation et de compréhension de l'impact de la crise de la Covid-19 (2019-2022).
+
+Ainsi, ParcourStat vise à traiter ces données afin de créer une base de données relationnelle propre et enrichie servant de base à une application web python basée sur le _framework_ Flask. Et c'est ce que nous vous proposons de découvrir aujourd'hui. 
+
+L'objectif de ParcourStat est mutliple : 
+- Permettre aux étudiants de disposer d'un outil complet centralisant les formations et leurs taux d'accessibilités. 
+- Permettre aux chercheur de disposer d'un outil de visualisation et de croisement de données sur différents volets, notamment sociaux, afin d'offrir une base solide pour la recherche. 
+- Permettre à n'importe qui de mieux comprendre l'évolution de l'accessbilité aux études supérieurs et cela pour différentes catégories sociales _(aujourd'hui au coeur de véritable enjeux sociaux)_
+- Mettre en valeur et enrichir les jeux de données gouvernementaux et publics.
+
+<br>
+<br>
 
 ## Installer la base de données : guide
 
