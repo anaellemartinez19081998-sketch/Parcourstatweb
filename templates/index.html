@@ -5,13 +5,13 @@
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-<div class="row text-center mt-4">
+<div class="row text-center mt-4"> <!--bloc permettant d'afficher les résultat des totaux obtenus sur le nombre de formations, le nombres d'établissements et le nombre de régions dans notre base de données. Affichage sous forme d'encart. -->
     <h1 class="mb-4">Bienvenue sur ParcourStat 📊</h1>
     
     <div class="col-md-4">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h2 class="text-primary">{{ total_formations }}</h2>
+                <h2 class="text-primary">{{ total_formations }}</h2> <!-- On récupère la bonne variable. -->
                 <p class="card-text">Formations</p>
             </div>
         </div>
@@ -34,22 +34,22 @@
     </div>
 </div>
 
-<div class="row mt-5">
+<div class="row mt-5"> <!-- Nouvelle div qui sert de titre pour notre carte interactive. -->
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap">
                 <h5 class="mb-0 font-weight-bold">Géolocalisation des Établissements</h5>
                 
-                <div class="form-inline mt-2 mt-md-0">
+                <div class="form-inline mt-2 mt-md-0"> <!-- Création des emplacements pour nos filtres. -->
                     <input type="text" id="nameSearch" class="form-control form-control-sm mr-2" 
                            placeholder="Rechercher par nom..." style="min-width: 250px;" 
-                           list="etablissementsList" autocomplete="off">
+                           list="etablissementsList" autocomplete="off"> <!-- barre de recherche avec autocomplétion. -->
                     
-                    <datalist id="etablissementsList"></datalist>
+                    <datalist id="etablissementsList"></datalist> <!-- Liste des établissements -->
                     
-                    <label for="regionFilter" class="mr-2 mb-0">Région :</label>
+                    <label for="regionFilter" class="mr-2 mb-0">Région :</label> <!-- Filtre régions. -->
                     <select id="regionFilter" class="form-control form-control-sm" style="min-width: 200px;">
-                        <option value="all">Toutes les régions</option>
+                        <option value="all">Toutes les régions</option> <!-- Création de la liste avec récupération dynamique de tous nos noms de régions. -->
                         {% for r in regions %}
                             <option value="{{ r.nom }}">{{ r.nom }}</option>
                         {% endfor %}
@@ -63,7 +63,7 @@
             
             <div class="card-footer bg-light py-2">
                 <small class="text-muted">
-                    <span class="mr-3"><span style="color:#0d6efd">●</span> Public</span>
+                    <span class="mr-3"><span style="color:#0d6efd">●</span> Public</span> <!-- Petite légende pour expliquer la significations de la différence de couleurs entre nos points. -->
                     <span class="mr-3"><span style="color:#6f42c1">●</span> Privé</span>
                     <i class="fas fa-mouse-pointer ml-2"></i> Cliquez sur un point pour voir les formations.
                 </small>
@@ -72,31 +72,48 @@
     </div>
 </div>
 
-<div> <span style="color: red;"> AVERTISSEMENT : </span> les points de Géolocalisation ne sont pas exact. Ils sont issus d'une moyenne calculée entre les différentes coordonnées de chaque formation d'un établissement car nous ne disposions pas des coordonnées de chaque établissement. </div>
+<!-- 
+    Nous n'avons pas de coordonnées par établissement et n'avons pas réussi à faire de géocodage en amont (modification du script de création de la base de données) 
+    Et étant donné le grand nombre d'établissement que nous avons à localiser, faire appelle à une API public et gratuite semblait trop instable et complexe.
+
+    Nous avons cependant les coordonnées par formation, des coordonnées qui varient parfois très peu semblant donc se concentrer autour de l'établissement en question. 
+    Ainsi nous avons créer dans notre route un calcul mathématique qui permet calculer des coordonnées moyenne d'un établissement à partir de toutes ces formations. 
+
+    Cependant pour les très gros établissements comme Sorbonne Université, Université Aix-Marseille, etc, ces moyennes mathématiques sont faussée à cause de l'écart géographique entre les formations. 
+    Cela créer donc un point commun censé être localisé sur l'établissement. 
+
+    Nous avons donc inclus cette phrase afin d'avertir tout utilisateur de la relative fiabilité des points de géolocalisations.
+ -->
+<div> <span style="color: red;"> AVERTISSEMENT : </span> les points de Géolocalisation ne sont pas exact. Ils sont issus d'une moyenne calculée entre les différentes coordonnées de chaque formation d'un établissement car nous ne disposions pas des coordonnées de chaque établissement. Ainsi pour les établissements comptant des formations aux localisation très espacées, un point de géolocalisation de l'établissement fictif a été créer.</div>
 
 <div id="data-holder" 
      data-formations='{{ points_carte | tojson | safe }}' 
      style="display:none;">
-</div>
+</div> <!-- Lien avec la route dans laquelle on indique le dictionnaire de données injectés, points_carte, et transformation du langage python vers json. -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // 1. Initialisation de la carte
+    //création de la carte avec précision du zoom souhaité à l'origine. Permet d'avoir une visualisation globale de la France et des territoires d'Outre Mer
     var map = L.map('map').setView([46.6033, 1.8883], 5);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+    }).addTo(map); // On ajoute à notre objet map la carte qui vient de OpenStreetMap, ce sera notre fonds de carte.
 
-    // 2. Récupération des données
+    // Récupération des données cibles dans notre dictionnaire d'entré.
     var dataElement = document.getElementById('data-holder');
     var etablissements = JSON.parse(dataElement.getAttribute('data-formations'));
-    var markersGroup = new L.featureGroup().addTo(map);
+    var markersGroup = new L.featureGroup().addTo(map); // Création de notre variable contenant tout nos points de géolocalisations.
 
-    // 3. Remplissage de l'auto-complétion (datalist)
-    var datalist = document.getElementById('etablissementsList');
-    var nomsUniques = [...new Set(etablissements.map(e => e.etablissement))].sort();
+    /*
+        Pour faciliter la navigation dans cette carte, nous avons souhaité mettre en place une barre de recherche proposant une fonction d'auto complétion. 
+        Cela permet donc à n'importe quel utilisateurs de chercher un établissement précis. 
+
+        Les lignes de codes suivnates permettent de créer cette fonction d'autocomplétion.
+    */
+    var datalist = document.getElementById('etablissementsList'); // On récupère tous les noms d'établissements
+    var nomsUniques = [...new Set(etablissements.map(e => e.etablissement))].sort(); // On met tous ces noms dans une liste triée par ordre alphabétique. Chaque établissement ne pourra être présent qu'une seule fois.
 
     nomsUniques.forEach(function(nom) {
         var option = document.createElement('option');
@@ -104,51 +121,81 @@
         datalist.appendChild(option);
     });
 
-    // 4. Fonction de filtrage croisé (Région + Nom)
+    // Création de notre fonction de chargement des données sur la carte. A chaque action sur un filtre par l'utilisateur, cette fonction va s'assurer d'afficher les bonnes données.
     function updateMap() {
+        // Notre fonction va prendre deux filtres en entrée : le filtre par région et le filtre par nom (barre de recherche)
         var regionFilter = document.getElementById('regionFilter').value;
         var nameQuery = document.getElementById('nameSearch').value.toLowerCase().trim();
 
-        markersGroup.clearLayers();
+        markersGroup.clearLayers(); // On vide la carte entièrement lors d'une sélection utilisateurs.
+
+
+        /* 
+            Cette "sous-fonction" s'assure que nos filtres vont fonctionner de la bonne manière.
+            On fonctionne sur un principe de condition afin de valider l'action d'un filtre et de conditionner l'affichage des points en fonctions des valeurs sélectionnées et des filtres actionnés. 
+        
+            Cela nous permet de créer très facilement une boucle de traitement conditionnelle qui va se baser uniquement sur des variables et donc traiter chaque données avec facilités.
+        
+        */
 
         etablissements.forEach(function(e) {
-            var matchRegion = (regionFilter === "all" || e.region === regionFilter);
-            var matchName = (nameQuery === "" || e.etablissement.toLowerCase().includes(nameQuery));
+            var matchRegion = (regionFilter === "all" || e.region === regionFilter); // D'abord condition sur la région. On vérifie si on est sur une région sélectionnée ou non. 
+            var matchName = (nameQuery === "" || e.etablissement.toLowerCase().includes(nameQuery)); // Ensuite on vérifie la barre de recherche pour savoir si une valeur, même partielle comme "lycée" a été sélectionnée.
+
+            /*
+            
+                Ensuite on va associer les deux variables. Si les deux conditions sont vraies, donc si les deux filtres sont utilisés voici le traitement a appliquer.
+            
+            */
 
             if (matchRegion && matchName) {
-                var pointColor = (e.statut && e.statut.toLowerCase().includes('public')) ? "#0d6efd" : "#6f42c1";
-                var radiusSize = 6 + Math.min(e.count, 10);
+                var pointColor = (e.statut && e.statut.toLowerCase().includes('public')) ? "#0d6efd" : "#6f42c1"; // couleurs différenciées en fonction du status de l'établissements.
+                var radiusSize = 6 + Math.min(e.count, 10); // Définition d'une taille du point en fonction du nombre de formation rattachées. Plus il y en a, plus la taille est importante.
 
-                var popupContent = "<strong>" + e.etablissement + "</strong><br>";
-                popupContent += "<small>" + e.statut + "</small><br><br>";
-                popupContent += "<b>" + e.count + " formations :</b><ul style='padding-left:15px; font-size:12px;'>";
-                e.liste.forEach(function(f) { popupContent += "<li>" + f + "</li>"; });
-                if (e.total_plus > 0) { popupContent += "<i>+ " + e.total_plus + " autres</i>"; }
+                /* 
+                    On créer une info bulle pour chaque point qui affiche différentes valeurs contenus dans notre dictionnaire. On laisse les valeurs sous forme de variable pour que l'affichage soit dynamique. 
+                    Il associe le point à un établissement. Ainsi il cherche les bonnes informations dans notre requête. 
+                */
+                var popupContent = "<strong>" + e.etablissement + "</strong><br>"; // afficher le nom de l'établissement sélectionné.
+                popupContent += "<small>" + e.statut + "</small><br><br>"; // Afficher le statut de l'établissement.
+                popupContent += "<b>" + e.count + " formations :</b><ul style='padding-left:15px; font-size:12px;'>"; // Afficher le nombre total de formations.
+                e.liste.forEach(function(f) { popupContent += "<li>" + f + "</li>"; }); // Afficher le nom des 5 première formations recensées dans le résultat de notre requête.
+                if (e.total_plus > 0) { popupContent += "<i>+ " + e.total_plus + " autres</i>"; } // Si il y a plus de 5 formations, on récupère le nombre de formations "en trop" et on l'affiche dans cette phrase. Encore une fois on utilise des variables pour garder l'aspect dynamique.
                 popupContent += "</ul>";
-
-                var circle = L.circleMarker([e.lat, e.lng], {
-                    radius: radiusSize,
-                    fillColor: pointColor,
-                    color: "#fff",
+                
+                // Création du point géographique sur la carte pour chaque établissement. 
+                var circle = L.circleMarker([e.lat, e.lng], { 
+                    radius: radiusSize, // taille définie selon le calcul établi dans la varaiable radiussize
+                    fillColor: pointColor, // Couleur du point défini selon le statut de l'établissement stocké dans pointcolor
+                    color: "#fff", // définition d'une couleur pour les bordures, ici blancs afin de voir les points.
                     weight: 1,
                     fillOpacity: 0.8
                 }).bindPopup(popupContent);
 
-                markersGroup.addLayer(circle);
+                markersGroup.addLayer(circle); // Et on ajoute le cercle créer pour un établissement à notre liste de cercle.
             }
         });
 
-        // Zoom automatique sur les résultats
+        // Zoom automatique sur les résultats, surtout efficace dans le cadre de sélection de régions car mieux définies.
         if (markersGroup.getLayers().length > 0) {
             map.fitBounds(markersGroup.getBounds().pad(0.2));
         }
     }
 
-    // 5. Écouteurs d'événements
+    /* 
+        Les deux variables suivantes permettent de créer un lien entre nos filtres et l'affichage de nos points. 
+
+        C'est à dire qu'à chaque fois qu'un filtre est actionné, on relance la fonction updateMap que nous venons de décrire. 
+        La première ligne de code permet de l'appliquer à nos filtres 
+        La seconde ligne de code permet de l'appliquer à notre barre de recherche. 
+
+        Ainsi la carte va se recharger sans besoin pour l'utilisateur d'appuyer sur un bouton. 
+        Le but est de faciliter l'interactivité.
+    */
     document.getElementById('regionFilter').addEventListener('change', updateMap);
     document.getElementById('nameSearch').addEventListener('input', updateMap);
 
-    // 6. GeoJSON décoratif
+    // Créer les frontières de nos régions sur notre fond de carte openstreetmap afin de donner quelques choses de plus harmonieux.
     fetch('/api/geojson')
         .then(response => response.json())
         .then(data => {
@@ -157,7 +204,7 @@
             }).addTo(map);
         });
 
-    // Affichage initial
+    // Lancement initiale de la fonction. 
     updateMap();
 </script>
 {% endblock %}

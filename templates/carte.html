@@ -25,9 +25,9 @@
                 {% endif %}
             </form>
         </div>
-    </div>
+    </div> <!-- Il n'est pas créer en javscript afin que le filtre puisse être sélectionné une seule fois et rester actif peux importe les changement de thématique et d'année. Sinon cela aurait été trop complexe et surtout trop peu utile.-->
 
-    <div class="row mb-3"> <!-- Création des boutons qui vont  -->
+    <div class="row mb-3"> <!-- Création des boutons qui vont permettre à l'utilisateur de changer de visualisation.  -->
         <div class="col-md-6 text-start">
             <div class="btn-group shadow-sm" role="group">
                 <button type="button" class="btn btn-outline-primary" id="btn-2024" onclick="updateYear('2024', this)">2024</button>
@@ -45,13 +45,14 @@
 
     <div id="no-data-alert" class="alert alert-info border-0 shadow-sm mb-3 d-none animate__animated animate__fadeIn bg-info text-dark">
         <i class="fas fa-info-circle me-2"></i> Indicateur non disponible pour 2018. Données non prises en comptes dans la construction du jeu de donnée de 2018.
-    </div>
+    </div> <!-- Div qui est un bandeau d'alerte à l'affichage conditionnel (voir fonction ligne 266) dans le cas où pour la thématique choisie en 2018 nous ne disposons pas de données 
+    Cela nous a été utile pour débuguer, et pour prévenir de tout nouveau bug nous avons décidé de laisser cela -->
 
 
 
 
 
-    <div class="row">
+    <div class="row"> <!-- Créatio de l'emplacement pour notre légende qui sera construite et affiché via JavSacript-->
         <div class="col-md-9">
             <div id="map" style="height: 70vh; width: 100%; border-radius: 15px; border: 1px solid #444; background-color: #1a1a1a;"></div>
         </div>
@@ -74,171 +75,229 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // --- ÉTAT GLOBAL INITIALISÉ PAR FLASK ---
+    /*
+        On commence par récupérer la sélections des filtres actifs, notamment l'année choisie et l'indicateur choisi.
+        Cela permet de garder l'aspect dynamique puisqu'on va stocker la valeur du filtre dans cette variable.
+    */
     var currentYear = "{{ active_year }}"; 
     var currentIndicator = "{{ active_indic }}"; 
     var geojsonLayer;
+
+    /*
+       C'est ici qu'on va charger les données préparées par notre routes python et on cherche à récupérer les données par régions.      
+    */
     var regionStats = JSON.parse(document.getElementById('region-data').textContent);
 
+
+    /*
+        Définition des interactions visuelles pour chaque thématiques choisies. 
+        Donc on définit le comportement de la carte produite pour la thématique 'part des femmes admises', 'part des boursiers admis' et 'nombre de formations' qui sont nos trois axes d'analyses
+        Ainsi on génère une page, une seule carte et seul le comportement de la carte change en fonction des données sélectionnées par l'utilisateur !
+    */
     const config = {
         filles: { 
             title: "Part des femmes admises", 
-            // Échelle de 40% à 60% avec un pas de 2%
+            // On créer une échelle allant de 40% à 60% (nos valeurs sont majoritairement comprises dans ce spectre) avec un pas de 2% (grande granularité)
+            // Ainsi on obtient une déclinaison de couleurs fines et précises, très parlant dès le premier coup d'oeil.
             grades: [40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60], 
             
-            colors: [
-                '#313695', // < 40% (Bleu profond)
-                '#4575b4', // 40-42%
-                '#74add1', // 42-44%
-                '#abd9e9', // 44-46%
-                '#e0f3f8', // 46-48%
-                '#ffffbf', // 48-50% (Bascule : Jaune très clair)
-                '#fee090', // 50-52%
-                '#fdae61', // 52-54%
-                '#f46d43', // 54-56%
-                '#d73027', // 56-58%
-                '#a50026', // 58-60%
-                '#67001f'  // > 60% (Rouge sang)
+            /* échelle de couleurs allant du bleu au rouge en passant par le jaune. 
+            Les couleurs s'appliquent dans l'ordre de déclaration des paliers à la ligne précédente.
+            Ainsi Le bleu (#313695) indique un taux inférieur ou égal à 40%
+            Le jaune (#ffffbf) indique un taux entre 50% et 52%
+            Le rouge (#67001f) correspond à un taux supérieur ou égal à 60% */
+            colors: [ 
+                '#313695', 
+                '#4575b4', 
+                '#74add1', 
+                '#abd9e9', 
+                '#e0f3f8', 
+                '#ffffbf', 
+                '#fee090', 
+                '#fdae61', 
+                '#f46d43', 
+                '#d73027', 
+                '#a50026', 
+                '#67001f'  
             ],
             unit: "%", 
-            has2018: true
+            has2018: true // Permet d'indiquer que pour cette thématique il existe des données en 2018 et qu'on garde cette même échelle.
         },
         boursiers: { 
             title: "Part des boursiers admis", 
-            // Palier de 5 en 5, de 5% jusqu'à 30%
+            /* 
+                On créer une échelle pour cette thématique, cette fois un peu différente car l'échelle globale de nos données est différentes
+                Ainsi on va de 5% à 29%, c'est dans cette échelle que 98% de données se situent. 
+                Nous avons fait le choix de ne pas trop agrandir cette échelle afin de garder une granularité fine et avec du sens visuel.
+            */
             grades: [5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29], 
-
+            /*
+                Dégradé de vert, du vert très clairs au vert foncé. 
+                On respecte le même principe que précédement, la première valeur de couleurs pour le premier palier et la dernière valeur pour le dernier palier. 
+            */
             colors: [
-                '#f7fcf5', // < 5%
-                '#eaf7e4', // 5-7%
-                '#daf0d2', // 7-9%
-                '#c8e8bf', // 9-11%
-                '#b4e0ab', // 11-13%
-                '#9dd795', // 13-15%
-                '#82cd7f', // 15-17% (Zone critique)
-                '#63c169', // 17-19% (Zone critique)
-                '#44b254', // 19-21%
-                '#2da145', // 21-23%
-                '#1a8e3a', // 23-25%
-                '#0a7a30', // 25-27%
-                '#006627', // 27-29%
-                '#004d1d'  // > 29% (Vert forêt profond)
+                '#f7fcf5', 
+                '#eaf7e4', 
+                '#daf0d2', 
+                '#c8e8bf', 
+                '#b4e0ab', 
+                '#9dd795', 
+                '#82cd7f', 
+                '#63c169', 
+                '#44b254', 
+                '#2da145', 
+                '#1a8e3a', 
+                '#0a7a30', 
+                '#006627', 
+                '#004d1d'  
             ], 
             unit: "%", 
             has2018: true
         },
         count: { 
             title: "Nombre de formations", 
-            // On commence par 50, ce qui crée automatiquement le palier < 50
+            /*
+                On créer une nouvelle échelle dédiée à cette thématique.
+                Vues l'échelle de nos données, nous avons été contraint d'étaler notre échelle de palier. Sinon nous avions rapidement une carte qui ne montrait rien.
+                Cependant, cela à le défaut de présenter une échelle très grande et peut être trop dense pour l'utilisateur. Nous atteignont ici les limites du jeu de données.
+                
+                On garde une intervalle de 50 pour garder une certaines granularité.
+            */
             grades: [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000], 
             
-            // Palette de 21 couleurs : Dégradé de bleus vifs et équilibrés
-            // On évite les extrêmes (trop blanc ou trop noir) pour le confort visuel
+            /*
+                Même principe que pour les dégradé précédents mais avec un dégradé de bleu uniquement, du clair vers le foncé. 
+            */
             colors: [
-                '#f0f9e8', // Index 0 : < 50
-                '#e0f3f8', // 50-100
-                '#d1eeea', // 100-150
-                '#c6dbef', // 150-200
-                '#b3d2e9', // 200-250
-                '#9ecae1', // 250-300
-                '#85bcdb', // 300-350
-                '#6baed6', // 350-400
-                '#54a4d0', // 400-450
-                '#4292c6', // 450-500
-                '#3082be', // 500-550
-                '#2171b5', // 550-600
-                '#1d6bb0', // 600-650
-                '#1865ab', // 650-700
-                '#1360a6', // 700-750
-                '#0e5aa1', // 750-800
-                '#08559c', // 800-850
-                '#084f97', // 850-900
-                '#084992', // 900-950
-                '#08438d', // 950-1000
-                '#083d88'  // > 1000 (Dernière couleur, reste lumineuse)
+                '#f0f9e8', 
+                '#e0f3f8', 
+                '#d1eeea', 
+                '#c6dbef', 
+                '#b3d2e9', 
+                '#9ecae1', 
+                '#85bcdb', 
+                '#6baed6', 
+                '#54a4d0', 
+                '#4292c6', 
+                '#3082be', 
+                '#2171b5', 
+                '#1d6bb0', 
+                '#1865ab', 
+                '#1360a6', 
+                '#0e5aa1', 
+                '#08559c', 
+                '#084f97', 
+                '#084992', 
+                '#08438d', 
+                '#083d88'
             ],
             unit: "", 
             has2018: true 
         }
     };
 
+
+    // On créer la carte initiale avec un zoom sur la France métropolitaine. Lorsqu'on arrive sur la page ou une nouvelle thématique, on aura cela.
     var map = L.map('map').setView([46.603354, 1.888334], 6);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' }).addTo(map);
 
+
+    /*
+        Dans la suite de ce code, nous créons une succession de fonction qui vont créer le dynamisme recherché
+        Ces fonctions vont devenir des boutons ou alors des fonctions associées automatiquement à des boutons que l'on va actionner.
+        
+        On va donc s'assurer de pouvoir changer d'année, de thématique, que les couleurs changent dynamiquement, que la carte soit rafraîchis etc
+    */
+
+
+    // Fonction afin de pouvoir changer d'année.
     function updateYear(year, btn) {
-        currentYear = year;
-        document.getElementById('hidden-year').value = year;
+        currentYear = year; // La variable globale se met à jour sur cette valeur correspondant au choix utilisateur.
+        document.getElementById('hidden-year').value = year; // Afin d'envoyer les nouvelles données, on a un formulaire caché avec lequel l'utilisateur interagit sans le savoir. On le met à jour ici. Cela permet de renvoyer les nouvelles données.
         document.querySelectorAll('[id^="btn-"]').forEach(b => b.classList.replace('btn-primary', 'btn-outline-primary') || b.classList.remove('active'));
         btn.classList.replace('btn-outline-primary', 'btn-primary');
-        btn.classList.add('active');
-        refreshMap();
+        btn.classList.add('active'); // Le bouton année sélectionné est coloré afin d'indiqué visuellement sur quelle année nous sommes.
+        refreshMap(); // On recharge la carte afin d'afficher les nouvelles données et les nouvelles couleurs.
     }
 
+    // Fonction pour mettre à jour les données montrées par la carte en fonction de la thématique choisie par l'utilisateur.
     function updateIndicator(indicator, btn) {
-        currentIndicator = indicator;
-        document.getElementById('hidden-indic').value = indicator;
+        currentIndicator = indicator; // Mise à jour de la variable globale avec la nouvelle thématique choisie.
+        document.getElementById('hidden-indic').value = indicator; // Action sur le formulaire caché pour mise à jour des données envoyées à la carte.
         document.querySelectorAll('[id^="ind-"]').forEach(b => {
             b.classList.replace('btn-dark', 'btn-outline-light');
             b.classList.remove('active');
         });
         btn.classList.replace('btn-outline-light', 'btn-dark');
-        btn.classList.add('active');
-        refreshMap();
+        btn.classList.add('active'); // Comme précédemment, on change la couleur des boutons sélectionnés et non sélectionnés.
+        refreshMap(); // On recharge afin d'afficher les nouvelles données sur la carte.
     }
 
+    // C'est la fonction appelée précédemment afin de recharger la carte.
     function refreshMap() {
         if (geojsonLayer) geojsonLayer.setStyle(style);
         updateStaticLegend();
         checkAlert();
     }
 
-    // Fonctions de style et légende (identiques à ton code précédent)...
+    // Cette fonction permet d'associer les dégradées de couleurs aux bonnes données. C'est avec cette fonction qu'on s'assure de la bonne coloration de la carte.
     function getCategoricalColor(d) {
         const c = config[currentIndicator];
-        if (currentYear === "2018" && !c.has2018) return '#444';
-        for (let i = 0; i < c.grades.length; i++) { if (d < c.grades[i]) return c.colors[i]; }
-        return c.colors[c.colors.length - 1];
+        if (currentYear === "2018" && !c.has2018) return '#444'; // Petite sécurité dans le cas où les données n'existent pas pour une région ou globalement pour 2018. Nous avions quelques doutes ainsi nous avons ajoutés cet indicateur.
+        for (let i = 0; i < c.grades.length; i++) { if (d < c.grades[i]) return c.colors[i]; } // On cherche la bonne couleur à appliquer en fonction du nombre associée à la région. 
+        return c.colors[c.colors.length - 1]; // Si c'est la valeur est au dessus du dernier palier, on affiche le dernier palier. Le -1 permet de passer de 'out of range' à 'last in range'
     }
 
+    // Cette fonction permet de créer une légende static à droite de notre carte. Elle va afficher nos paliers et les couleurs associées. Elle n'a pas de fonction dynamique.    
     function updateStaticLegend() {
-        const c = config[currentIndicator];
+        const c = config[currentIndicator]; // On récupère la thématique sélectionnée afin de de sélectionner la bonne échelle.
         const container = document.getElementById('static-legend');
-        if (currentYear === "2018" && !c.has2018) {
+        if (currentYear === "2018" && !c.has2018) { // On s'assure de son bon fonctionnement en 2018
             container.innerHTML = `<div class="text-center py-4 text-light-50">Données indisponibles</div>`;
-            return;
+            return; // On affiche un message d'erreur si on a une absence totale de données.
         }
-        let html = `<p class="fw-bold small text-light mb-3 text-uppercase">${c.title}</p>`;
-        html += `<div class="d-flex align-items-center mb-2"><div style="background:${c.colors[0]}; width:20px; height:20px; margin-right:10px;"></div><span class="small text-light">< ${c.grades[0]}${c.unit}</span></div>`;
+        let html = `<p class="fw-bold small text-light mb-3 text-uppercase">${c.title}</p>`; // Création du titre de la légende
+        html += `<div class="d-flex align-items-center mb-2"><div style="background:${c.colors[0]}; width:20px; height:20px; margin-right:10px;"></div><span class="small text-light">< ${c.grades[0]}${c.unit}</span></div>`; // On créer le contenu de la légende : un petit carré de couleur associée au palier correspondant sur une seule ligne.
         for (let i = 0; i < c.grades.length - 1; i++) {
             html += `<div class="d-flex align-items-center mb-2"><div style="background:${c.colors[i+1]}; width:20px; height:20px; margin-right:10px;"></div><span class="small text-light">${c.grades[i]} - ${c.grades[i+1]}${c.unit}</span></div>`;
-        }
-        container.innerHTML = html;
+        } // On boucle sur chaque association couleur/palier afin de créer la légende.
+        container.innerHTML = html; // on envoie le HTML pour affichage.
     }
 
+    // Il nous est arrivé d'avoir des problèmes de chargement et de requête. Nous avons donc créer un message d'alerte pour 2018 si on a pas de données disponible. Voici la fonction qui permet d'afficher visuellement l'alerte.
     function checkAlert() {
-        const alertBox = document.getElementById('no-data-alert');
-        (currentYear === "2018" && !config[currentIndicator].has2018) ? alertBox.classList.remove('d-none') : alertBox.classList.add('d-none');
+        const alertBox = document.getElementById('no-data-alert'); // On définit sur quel élément on va agir via son ID
+        (currentYear === "2018" && !config[currentIndicator].has2018) ? alertBox.classList.remove('d-none') : alertBox.classList.add('d-none'); // Finalement, si il n'y a pas de données pour 2018 dans cette thématique et bien on affiche le bandeau.
     }
 
+    /*
+        Cette fonction à pour but de normaliser tout le string pris en compte par notre javscript. Cela a deux buts : 
+            - Le premier est de permettre à JavaScript de n'avoir aucune difficulté de lecture. Ainsi on normalise tout notre str selon son standard. 
+            - Le second est pour résoudre l'incompatibilité de notre base de données avec le geojson. En effet, dans notre geojson les noms des régions ne sont pas tout à fait les mêmes. Par exemple on Île-de-France dans notre base de données mais ile-de-france dans notre geojson. 
+                Peu importe l'écriture de base, on réecrit sous une nouvelle forme ! tout devient iledefrance, ainsi plus de problème d'incompatibilité dû à des saisies différentes. 
+    */
     function normalize(str) { return str ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-\s]/g, "").trim() : ""; }
 
+
+    // Définition de l'apparence de nos régions. On va gérer l'opacité, les bordures de régions, etc.
     function style(feature) {
-        const nomGeo = normalize(feature.properties.nom || feature.properties.NOM_REGION || "");
-        let val = 0;
-        for (let key in regionStats) { if (normalize(key) === nomGeo) { val = regionStats[key][currentYear][currentIndicator] || 0; break; } }
-        return { fillColor: getCategoricalColor(val), weight: 1, opacity: 1, color: '#333', fillOpacity: 0.8 };
+        const nomGeo = normalize(feature.properties.nom || feature.properties.NOM_REGION || ""); // On récupère le nom de la région.
+        let val = 0; 
+        for (let key in regionStats) { if (normalize(key) === nomGeo) { val = regionStats[key][currentYear][currentIndicator] || 0; break; } } // On cherche dans notre dictionnaire JSON les données associées à la région, selon l'année dans laquelle nous sommes et la thématique. Pour cela on lui indique aussi la structure de notre JSON avec les variables JavaScript pour qu'il puisse accéder aux bonnes entrées.
+        return { fillColor: getCategoricalColor(val), weight: 1, opacity: 1, color: '#333', fillOpacity: 0.8 }; // On définit le rendu. Donc on associe la bonne couleur en fonction du palier de données correspondant, on colorie les bordures en bleus et on définit une opacité suffisante mais pas trop lourde visuellement.
     }
 
-    // INITIALISATION AU CHARGEMENT
+    // Ici on initialise notre page dès le chargement.
     window.onload = function() {
-        // Appliquer l'état visuel aux boutons selon les valeurs de Flask
+        
         updateIndicator(currentIndicator, document.getElementById('ind-' + currentIndicator));
         updateYear(currentYear, document.getElementById('btn-' + currentYear));
 
+        // Création de la carte et du découpage régionale selon le geojson stocké dans le dossier Static.
         fetch("{{ url_for('static', filename='Regions_France.geojson') }}")
             .then(res => res.json())
             .then(data => {
-                geojsonLayer = L.geoJSON(data, {
+                geojsonLayer = L.geoJSON(data, { // On dessine les régions sur la carte.
                     style: style,
                     onEachFeature: function (feature, layer) {
                         layer.on('mouseover', function() {
@@ -247,11 +306,11 @@
                             for (let key in regionStats) { if (normalize(key) === nomGeo) { match = regionStats[key]; break; } }
                             if (match) {
                                 const val = match[currentYear][currentIndicator] || 0;
-                                layer.bindTooltip(`<strong>${match.nom_reel}</strong>: ${val}${config[currentIndicator].unit}`, {sticky: true}).openTooltip();
+                                layer.bindTooltip(`<strong>${match.nom_reel}</strong>: ${val}${config[currentIndicator].unit}`, {sticky: true}).openTooltip(); // Ajout d'une info bulle par région et définissions des informations à afficher.
                             }
                         });
                     }
-                }).addTo(map);
+                }).addTo(map); // On connecte cela à la carte, elle devient interactive.
             });
     };
 </script>
