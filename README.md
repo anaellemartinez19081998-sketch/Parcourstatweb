@@ -1,3 +1,163 @@
+# Déploiement et utilisation de ParcourStat
+
+
+- [Déploiement et utilisation de ParcourStat](#déploiement-et-utilisation-de-parcourstat)
+  - [Installer la base de données : guide](#installer-la-base-de-données--guide)
+    - [Séparation des deux dossiers.](#séparation-des-deux-dossiers)
+    - [Créer un environement virtuel exploitable.](#créer-un-environement-virtuel-exploitable)
+    - [Créer un fichier .env](#créer-un-fichier-env)
+    - [Créer le nécessaire dans son Gestionnaire de Base de Données (DBeaver)](#créer-le-nécessaire-dans-son-gestionnaire-de-base-de-données-dbeaver)
+    - [Lancer l'application](#lancer-lapplication)
+  - [Installer l'application ParcourStatWeb](#installer-lapplication-parcourstatweb)
+    - [Créer un environement virtuel exploitable pour ParcourStatWeb: guide](#créer-un-environement-virtuel-exploitable-pour-parcourstatweb-guide)
+    - [Créer un fichier .env](#créer-un-fichier-env-1)
+    - [Lancer l'application](#lancer-lapplication-1)
+- [ParcourStatWeb : quelques fonctionnalités](#parcourstatweb--quelques-fonctionnalités)
+  - [Comparaison des taux de boursiers par formation](#comparaison-des-taux-de-boursiers-par-formation)
+    - [Volet de filtres](#volet-de-filtres)
+    - [Visualisation et synthèse](#visualisation-et-synthèse)
+    - [Architecture](#architecture)
+
+## Installer la base de données : guide
+
+<br>
+
+### Séparation des deux dossiers.
+
+<br>
+
+Comme dit précédemment, ce dossier github contient en réalité deux sous-dossiers. Un sous-dossier contenant l'application web, et un second sous-dossier contenant le nécessaire afin d'installer la base de donnée sur laquelle l'application se base. 
+
+Veuillez séparer les deux dossiers.
+
+<br>
+
+### Créer un environement virtuel exploitable.
+
+<br>
+
+Avant toute choses, il convient d'initialiser un environement virtuel. Ouvrez un terminal, aller à l'emplacement souhaité et créez un environement virtuel à l'aide de `python3 -m venv nom_environement_virtuel` ou `python -m venv nom_environement_virtuel`
+
+> <span style=color:green> Vous pouvez tout à fait créer l'environement virtuel dans le dossier contenant le nécessaire à la création de la base de données.</span>
+
+Dans le même terminal, veuillez activer votre environement virtuel à l'aide de `source nom_environement_virtuel/bin/activate`
+
+Si vous êtes déjà dans le dossier de la base de données, taper : `pip install -r requirements.txt`. Cela vous installera automatiquement tout le nécessaire pour créer notre base de donnée. 
+
+Si vous n'êtes pas dans ce dossier, veuillez vous y déplacer à l'aide de la commande `cd` puis lancer `pip install -r requirements.txt`
+
+<br>
+
+### Créer un fichier .env
+
+<br>
+
+à l'aide d'un éditeur de code comme VSCode ou VSCodium, créer un nouveau fichier intitulé **.env**. 
+
+Dans ce fichier, entrer les lignes de codes suivantes : 
+
+```python
+pgDatabase="ParcourStat"
+pgUser="Votre_utilisateur_PostGre_propriétaire_de_la_base_ParcourStat" # Rentrer son nom d'utilisateur PostGre.
+pgPassword="Le_mot_de_passe_de_votre_utilisateur" # Rentrer son mot de passe.
+pgPort=5432
+pgHost=127.0.0.1
+pgSchemaImportsCsv="ParcourStat"
+failOnFirstSqlError=True
+failOnFirstCsvError=True
+```
+<br>
+
+### Créer le nécessaire dans son Gestionnaire de Base de Données (DBeaver)
+
+Dans son gestionnaire de base de données comme DBeaver, créer une DataBase nommée "**ParcourStat**" et un schéma dans cette DataBase nommé également "**ParcourStat**"
+
+C'est ici que nos tables relationnelles se créeront automatiquement.
+
+<br>
+
+### Lancer l'application 
+
+Une fois ces étapes préliminaires faites, il ne reste plus qu'à construire la base de données. 
+
+Dans votre terminal avec votre environement virtuel programmé, activé et placé dans le dossier de l'application de création de la base de donnée lancer la commande `python run.py`. Dans certains cas, cela peut aussi être `python3 run.py`
+
+Laisser l'application faire son oeuvre. Si pas de message d'erreur, aller dans votre gestionnaire de base de donnée vérifier que les tables ont bien été créer ! 
+
+**N'hésitez pas à nous faire part de toute problématique rencontrées !** 
+
+<br>
+<br>
+<br>
+
+## Installer l'application ParcourStatWeb
+
+<br>
+
+Sortons du dossier de la base de données. Nous n'en aurons plus besoins ! 
+
+Vous pouvez désactiver votre environement virtuel à l'aide de la commande `deactivate` et sortir du dossier que nous venons de traiter.
+
+<br>
+
+### Créer un environement virtuel exploitable pour ParcourStatWeb: guide 
+
+<br>
+
+ParcourStatWeb demande d'autres instalaltion que ParcourStatBase. 
+
+Vous devrez alors créer un autre environement virtuel 
+
+> <span style=color:green> Sur le principe, nous pourrions simplement ajouter les librairies nécessaire à l'environement virtuel précédemment créer. Mais cela risquerais de le surcharger. Afin de ne pas le surcharger, nous proposons de faire un second environement virtuel. </span>
+
+Dans le dossier dans lequel vous avez précédemment créer notre premier environement virtuel, vous pouvez refaire `python3 -m venv nom_environement_virtuel` ou `python -m venv nom_environement_virtuel`. 
+
+Dans le même terminal, veuillez activer votre environement virtuel à l'aide de `source nom_environement_virtuel/bin/activate`
+
+Si vous êtes déjà dans le dossier de la base de données, taper : `pip install -r requirements.txt`. Cela vous installera automatiquement tout le nécessaire pour utiliser notre application. 
+
+Si vous n'êtes pas dans ce dossier, veuillez vous y déplacer à l'aide de la commande `cd` puis lancer `pip install -r requirements.txt`
+
+<br>
+
+### Créer un fichier .env 
+
+à l'aide d'un éditeur de code comme VSCode ou VSCodium, créer un nouveau fichier intitulé **.env**. 
+
+Dans ce fichier, entrer les lignes de codes suivantes : 
+
+```python
+pgUser="Votre_utilisateur_PostGre_propriétaire_de_la_base_ParcourStat" # Rentrer son nom d'utilisateur PostGre.
+pgPassword="Le_mot_de_passe_de_votre_utilisateur" # Rentrer son mot de passe.
+pgHost = localhost 
+pgPort = 5432
+pgDatabase = ParcourStat #parfois nécessaire d'écrire "ParcourStat". 
+```
+
+Bien évidémment, vous réutiliser le même utilisateur et mot de passe que précédemment sauf si vous les avez changer entre temps !
+
+<br>
+
+### Lancer l'application 
+
+Une fois ces étapes préliminaires faites, il ne reste plus qu'à construire la base de données. 
+
+Dans votre terminal avec votre environement virtuel programmé, activé et placé dans le dossier de l'application de création de la base de donnée lancer la commande `python app.py`. Dans certains cas, cela peut aussi être `python3 app.py`
+
+L'application se lance après un petit temps de chargement. Une URL apparaîtra dans votre terminal, vous pouvez cliquer dessus afin de l'ouvrir directement dans votre navigateur par défaut ou bien la copier / coller dans le navigateur de votre choix. 
+
+L'application web est maintenant utilisable !
+
+**N'hésitez pas à nous faire part de toute problématique rencontrées !**
+
+<br>
+<br>
+<br>
+
+# ParcourStatWeb : quelques fonctionnalités 
+
+<br>
+
 ## Comparaison des taux de boursiers par formation
 
 La page de comparaison permet de mettre en regard jusqu'à cinq formations sur la question de l'accès des étudiants boursiers, en comparant les données Parcoursup de 2018 et 2024. Elle s'organise en deux zones : un volet de filtres sur la gauche et une zone de visualisation sur la droite.
