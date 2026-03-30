@@ -31,9 +31,9 @@
 
 ParcourStat est un projet ambitieux de création d'une application permettant l'exploitabilité des données publiées par le Gouvernement français sur les résultats ParcourSup à l'issue de chaque campagne. 
 
-Ce projet part d'un constat : ces données publiques et librement accessibles sont peu exploitées. Leur exploitation pourrait, au regard de leur exhaustivité, permettre une meilleure compréhension et vision globale du système universitaire français. De plus, les jeux de données sont nombreux : il y en a un par année. Leurs croisements au sein d'un même outil peut permettre d'obtenir une vision globale permettant de comprendre l'évolution du système universitaire français face aux évolutions sociales et politiques. 
+L'objectif principal du projet est de permettre une meilleure compréhension et vision globale de l'accès au système universitaire françaisre, notamment face aux évolutions sociales et politiques. 
 
-Pour cela, nous avons choisi d'exploiter, pour le moment, deux jeux de données : les résultats de ParcourSup de 2018 et de 2024. Cela nous permet de créer un outil de visualisation et de compréhension de l'impact de la crise de la Covid-19 (2019-2022).
+Pour cela, nous avons choisi d'exploiter, pour le moment, deux jeux de données : les résultats de ParcourSup de 2018 et de 2024.
 
 Ainsi, ParcourStat vise à traiter ces données afin de créer une base de données relationnelle propre et enrichie servant de base à une application web python basée sur le _framework_ Flask. Et c'est ce que nous vous proposons de découvrir aujourd'hui. 
 
