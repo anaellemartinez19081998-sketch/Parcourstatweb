@@ -4,10 +4,15 @@ const selectFormation = document.getElementById('formation');
 new Choices(selectFormation, {
     searchEnabled: true,
     searchPlaceholderValue: 'Rechercher une formation',
+    searchResultLimit: 10, 
     itemSelectText: '',
     noResultsText: 'Aucune formation trouvée',
     noChoicesText: 'Aucune formation disponible',
     shouldSort: false,
+    fuseOptions: {          //utilisation de fuseOptions pour une meilleure auto-complétion
+        threshold: 0.3,  
+        distance: 100,
+    }
 });
 
 
@@ -55,13 +60,24 @@ if (formationId && annee) {
 
     //conversion de la réponse en json
     fetch(urlApi)
-        .then(response => response.json())
-        //on remplit les graphiques avec le json
+        .then(response => {
+            if (!response.ok) {
+                // Si le serveur renvoie une erreur on redirige l'utilisateur vers la route d'erreur
+                window.location.href = "/erreur-donnees"; 
+                return; //s'il y a erreur, la transaction est arrêtée
+            }
+            return response.json(); //s'il n'y a pas d'erreurs, les données sont retournées au format json
+            })
         .then(data => {
+            if (!data) return;
+            //si le dictionnaire est vide et que les données n'existent pas, ce message s'affiche
             if (!data || Object.keys(data).length === 0) {
-                document.getElementById('resume').innerHTML = "Aucune donnée disponible pour cette sélection.";
+                document.getElementById('resume').innerHTML = "Aucune donnée disponible pour cette recherche.";
                 return;
             }
+            
+            //si les données existent, on remplit les graphiques avec le dictionnaire json
+        
 
             // affichage de la capacité
             const capaciteE = document.getElementById('info-capacite');
@@ -117,5 +133,11 @@ if (formationId && annee) {
                             </ul>
                     </div>
                 </div>`;
+        })
+        
+        .catch(error => {
+            // Cette partie attrape les erreurs réseau (ex: plus d'internet)
+            console.error('Erreur réseau ou fetch :', error);
+            window.location.href = "/erreur-donnees";
         });
 }
