@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{{ formation.nom }} — ParcourStat{% endblock %}
+
+{% block content %}
+<a href="/formations" class="btn btn-outline-secondary mb-4">← Retour aux formations</a>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-dark text-white">
+        <h2 class="mb-0">{{ formation.nom }}</h2>
+    </div>
+    <div class="card-body">
+
+        <!-- Image de l'établissement -->
+        {% if formation.etablissement.url_image %}
+        <img src="{{ formation.etablissement.url_image }}"
+             alt="{{ formation.etablissement.nom }}"
+             class="img-fluid rounded mb-4"
+             style="max-height: 300px; max-width: 100%; object-fit: contain; display: block; margin: auto;">
+        {% elif formation.etablissement.url_logo %}
+        <img src="{{ formation.etablissement.url_logo }}"
+             alt="{{ formation.etablissement.nom }}"
+             class="img-fluid rounded mb-4"
+             style="max-height: 150px; max-width: 100%; object-fit: contain; display: block; margin: auto;">
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-6">
+                <h5> Établissement</h5>
+                <p>{{ formation.etablissement.nom }}</p>
+                <p class="text-muted">{{ formation.etablissement.statut }}</p>
+                <p> {{ formation.etablissement.adresse }}</p>
+                {% if formation.etablissement.site_web %}
+                <a href="{{ formation.etablissement.site_web }}" target="_blank" class="btn btn-outline-primary btn-sm">🌐 Site web</a>
+                {% endif %}
+
+                <div class="mt-4">
+                    {% if current_user.is_authenticated %}
+                        {% if est_favori %}
+                            <a href="/favori/supprimer/{{ formation.id }}" class="btn btn-danger">❤️ Retirer des favoris</a>
+                        {% else %}
+                            <a href="/favori/ajouter/{{ formation.id }}" class="btn btn-outline-danger">🤍 Ajouter aux favoris</a>
+                        {% endif %}
+                    {% else %}
+                        <a href="/connexion" class="btn btn-outline-secondary">Connectez-vous pour ajouter aux favoris</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h5>Formation</h5>
+                <p><strong>Type :</strong> {{ formation.type_formation.nom }}</p>
+                <p><strong>Discipline :</strong> {{ formation.discipline.nom }}</p>
+                <p><strong>Sélective :</strong>
+                    {% if formation.selectivite %}
+                        <span class="badge bg-danger">Oui</span>
+                    {% else %}
+                        <span class="badge bg-success">Non</span>
+                    {% endif %}
+                </p>
+
+                <!-- Bouton export JSON -->
+                <div class="mt-4">
+                    <a href="/formation/{{ formation.id }}/export.json"
+                       class="btn btn-outline-secondary btn-sm"
+                       target="_blank">
+                        Exporter en JSON
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SECTION COMMENTAIRES ===== -->
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">Commentaires ({{ commentaires|length }})</h5>
+    </div>
+    <div class="card-body">
+
+        <!-- Formulaire d'ajout de commentaire -->
+        {% if current_user.is_authenticated %}
+        <form method="POST" action="/formation/{{ formation.id }}/commentaire/ajouter" class="mb-4">
+            <div class="mb-2">
+                <textarea name="contenu" class="form-control" rows="3"
+                          placeholder="Laissez un commentaire..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-dark btn-sm">
+                 Publier
+            </button>
+        </form>
+        {% else %}
+        <p class="text-muted mb-4">
+            <a href="/connexion">Connectez-vous</a> pour laisser un commentaire.
+        </p>
+        {% endif %}
+
+        <!-- Liste des commentaires -->
+        {% if commentaires %}
+            {% for commentaire in commentaires %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <!-- Auteur et date -->
+                            <strong>{{ commentaire.user.username }}</strong>
+                            <small class="text-muted ms-2">
+                                {{ commentaire.date_ajout.strftime('%d/%m/%Y à %H:%M') }}
+                            </small>
+                        </div>
+                        <!-- Bouton suppression (auteur uniquement) -->
+                        {% if current_user.is_authenticated and current_user.id == commentaire.user_id %}
+                        <form method="POST" action="/commentaire/{{ commentaire.id }}/supprimer">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">effacer </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    
+                    <p class="mt-2 mb-2">{{ commentaire.contenu }}</p>
+
+                    <!-- Bouton like -->
+                    {% if current_user.is_authenticated %}
+                    <form method="POST" action="/commentaire/{{ commentaire.id }}/like" class="d-inline">
+                        {% if commentaire.id in likes_user %}
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                ❤️ {{ commentaire.nb_likes }}
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                🤍 {{ commentaire.nb_likes }}
+                            </button>
+                        {% endif %}
+                    </form>
+                    {% else %}
+                        <span class="text-muted">❤️ {{ commentaire.nb_likes }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">Aucun commentaire pour l'instant. Peur de commenter? Le commentaire a plus peur de vous. </p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

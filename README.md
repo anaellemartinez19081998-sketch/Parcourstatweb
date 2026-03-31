@@ -2,6 +2,7 @@
 
 - [ParcourStat : guide d'utilisation et description du projet](#parcourstat--guide-dutilisation-et-description-du-projet)
   - [Le projet ParcourStat](#le-projet-parcourstat)
+  - [Fonctionnement du repo GitHub:](#fonctionnement-du-repo-github)
   - [Installer la base de données](#installer-la-base-de-données)
     - [Séparer les deux dossiers](#séparer-les-deux-dossiers)
     - [Créer un environnement virtuel](#créer-un-environnement-virtuel)
@@ -52,11 +53,33 @@ ParcourStat poursuit plusieurs objectifs :
 
 <br>
 
+## Fonctionnement du repo GitHub: 
+
+Ce repo GitHub permet à tout utilisateur de faire fonctionner notre application. 
+
+Ce ReadMe sert de guide d'instruction à suivre afin de faire fonctionner l'application, et également de guide explicatif sur certaines fonctions de notre application. 
+
+Ce repo est composé de deux dossiers : 
+- **ParcourStatBase**, qui contient tout le nécessaire pour créer la base de données sur laquelle ParcourStatWeb s'appuie  
+- **ParcourStatWeb**, qui contient tout le nécessaire pour faire fonctionner l'application web à partir de la base de données précédemment créer.
+
+<br>
+
 ## Installer la base de données
+
+<br>
 
 ### Séparer les deux dossiers
 
-Le dépôt contient deux sous-dossiers distincts : l'un pour l'application web, l'autre pour la création de la base de données. Il convient de les séparer avant de commencer.
+<br>
+
+Avant de commencer, nous vous invitons à cloner ou forker le repo GitHub. 
+
+Pour une utilisation occassionnelle, sans volonté de modifier ou quoi que ce soit d'autre, nous vous invitons à sortir **ParcourStatBase** et **ParcourStatWeb** du dossier de téléchargement pour plus de clareté dans la manipulation des dossiers. 
+
+**Cette manipulation n'est pas obligatoire.**
+
+<br>
 
 ### Créer un environnement virtuel
 
@@ -80,7 +103,9 @@ pip install -r requirements.txt
 
 ### Créer un fichier `.env`
 
-À la racine du dossier de la base de données, créez un fichier `.env` contenant les informations suivantes :
+À la **racine du dossier ParcourStatBase/Application**, créez un fichier `.env` contenant les informations suivantes :
+
+> Donc il faut entrer dans le dossier ParcourStatBase, puis dans le dossier Application et créer ici son `.env`
 
 ```
 pgDatabase=ParcourStat
@@ -106,6 +131,8 @@ Les tables relationnelles y seront créées automatiquement à l'étape suivante
 
 ### Lancer la création de la base
 
+Pour cela, avec votre terminal toujours placé dans le dossier **Application** de **ParcourStatBase** et avec l'**environement virtuel dédié et activé**, lancez la commence suivante :
+
 ```bash
 python run.py
 ```
@@ -116,9 +143,11 @@ Une fois l'exécution terminée sans erreur, vérifiez dans votre gestionnaire q
 
 ## Installer l'application ParcourStatWeb
 
+<br>
+
 ### Créer un environnement virtuel dédié
 
-ParcourStatWeb requiert des dépendances différentes de celles de la base de données. Il convient donc de créer un second environnement virtuel, de l'activer, puis d'installer les dépendances depuis le dossier de l'application :
+ParcourStatWeb requiert des dépendances différentes de celles de ParcourStatBase. Il convient donc de créer un second environnement virtuel, de l'activer, puis d'installer les dépendances depuis le dossier de l'application :
 
 ```bash
 python3 -m venv nom_environnement_virtuel
@@ -126,9 +155,11 @@ source nom_environnement_virtuel/bin/activate
 pip install -r requirements.txt
 ```
 
+> Vous pouvez créer cet environement virtuel dans le même dossier parents que votre précédent environement virtuel, ou directement dans le dossier **ParcourStatWeb**.
+
 ### Créer un fichier `.env`
 
-À la racine du dossier de l'application, créez un fichier `.env` avec les mêmes identifiants que précédemment :
+À la racine du dossier **Application** dans **ParcourStatWeb**, créez un fichier `.env` avec les mêmes identifiants que précédemment :
 
 ```
 pgUser=votre_utilisateur_postgresql
@@ -138,7 +169,11 @@ pgPort=5432
 pgDatabase=ParcourStat
 ```
 
+> Donc il faut entrer dans le dossier ParcourStatBase, puis dans le dossier Application et créer ici son `.env`
+
 ### Lancer l'application
+
+Pour cela, avec votre terminal toujours placé dans le dossier **Application** de **ParcourStatWeb** et avec l'**environement virtuel dédié et activé**, lancez la commence suivante :
 
 ```bash
 python app.py

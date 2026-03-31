@@ -1,0 +1,83 @@
+Nom_origine;Nom_abrégé
+Effectif des admis en phase complémentaire;EA_PC
+Dont effectif des admis ayant reçu leur proposition d’admission à l'ouverture de la procédure principale;EA_PA_OP
+Dont effectif des admis ayant reçu leur proposition d’admission avant le baccalauréat;EA_PA_AB
+Dont effectif des admis ayant reçu leur proposition d’admission avant la fin de la procédure principale;EA_PA_PP
+Dont effectif des admis en internat;EA_I
+Dont effectif des admis boursiers néo bacheliers;EA_BN_B
+Effectif des admis néo bacheliers;EA_NB
+Effectif des admis néo bacheliers généraux;EA_NB_G
+Effectif des admis néo bacheliers technologiques;EA_NB_T
+Effectif des admis néo bacheliers professionnels;EA_NB_P
+Effectif des autres candidats admis;EA_AC
+Dont effectif des admis néo bacheliers sans information sur la mention au bac;EA_NB_SI
+Dont effectif des admis néo bacheliers sans mention au bac;EA_NB_SM
+Dont effectif des admis néo bacheliers avec mention Assez Bien au bac;EA_NB_AB
+Dont effectif des admis néo bacheliers avec mention Bien au bac;EA_NB_B
+Dont effectif des admis néo bacheliers avec mention Très Bien au bac;EA_NB_TB
+Dont effectif des admis néo bacheliers avec mention Très Bien avec félicitations au bac;EA_NB_TBF
+Effectif des admis néo bacheliers généraux ayant eu une mention au bac;EA_NB_G_M
+Effectif des admis néo bacheliers technologiques ayant eu une mention au bac;EA_NB_T_M
+Effectif des admis néo bacheliers professionnels ayant eu une mention au bac;EA_NB_P_M
+Dont effectif des admis issus du même établissement (BTS/CPGE);EA_NB_IME
+Dont effectif des admises issues du même établissement (BTS/CPGE);EA_F_IME
+Dont effectif des admis issus de la même académie;EA_IMA
+Dont effectif des admis issus de la même académie (Paris/Créteil/Versailles réunies);EA_IMA_PCV
+% d’admis ayant reçu leur proposition d’admission à l'ouverture de la procédure principale;PA_OP_PP
+% d’admis ayant reçu leur proposition d’admission avant le baccalauréat;PA_AB
+% d’admis ayant reçu leur proposition d’admission avant la fin de la procédure principale;PA_AF_PP
+% d’admis dont filles;PA_F
+% d’admis néo bacheliers issus de la même académie;PA_NB_IMA
+% d’admis néo bacheliers issus de la même académie (Paris/Créteil/Versailles réunies);PA_NB_IMA_PCV
+% d’admis néo bacheliers issus du même établissement (BTS/CPGE);PA_NB_IME
+% d’admis néo bacheliers boursiers;PA_NB_B
+% d’admis néo bacheliers;PA_NB
+% d’admis néo bacheliers sans information sur la mention au bac;PA_NB_SI_MB
+% d’admis néo bacheliers sans mention au bac;PA_NB_SM_B
+% d’admis néo bacheliers avec mention Assez Bien au bac;PA_NB_AB
+% d’admis néo bacheliers avec mention Bien au bac;PA_NB_B_MB
+% d’admis néo bacheliers avec mention Très Bien au bac;PA_NB_TB
+% d’admis néo bacheliers avec mention Très Bien avec félicitations au bac;PA_NB_TB_F
+% d’admis néo bacheliers généraux;PA_NB_G
+Dont % d’admis avec mention (BG);PA_M
+% d’admis néo bacheliers technologiques;PA_NB_T
+Dont % d’admis avec mention (BT);PA_M_BT
+% d’admis néo bacheliers professionnels;PA_NB_P
+Dont % d’admis avec mention (BP);PA_M_BP
+Effectif total des candidats pour une formation;ET_C
+Dont effectif des candidates pour une formation;ET_CF
+Effectif total des candidats en phase principale;ET_C_PP
+Dont effectif des candidats ayant postulé en internat;EC_I
+Effectif des candidats néo bacheliers généraux en phase principale;EC_NB_G
+Dont effectif des candidats boursiers néo bacheliers généraux en phase principale;EC_B_NB_G
+Effectif des candidats néo bacheliers technologiques en phase principale;EC_NB_T
+Dont effectif des candidats boursiers néo bacheliers technologiques en phase principale;EC_B_NB_T
+Effectif des candidats néo bacheliers professionnels en phase principale;EC_NB_P
+Dont effectif des candidats boursiers néo bacheliers professionnels en phase principale;EC_B_NB
+Effectif des autres candidats en phase principale;EC_AC
+Effectif total des candidats en phase complémentaire;ETC_PC
+Effectif des candidats néo bacheliers généraux en phase complémentaire;EC_NB_G_PC
+Effectif des candidats néo bacheliers technologique en phase complémentaire;EC_NB_T_PC
+Effectif des candidats néo bacheliers professionnels en phase complémentaire;EC_NB_P_PC
+Effectifs des autres candidats en phase complémentaire;EAC_PC
+Effectif total des candidats classés par l’établissement en phase principale;ETC_CE
+Effectif des candidats classés par l’établissement en phase complémentaire;EC_CE_PC
+Effectif des candidats classés par l’établissement en internat (CPGE);EC_CE_I
+Effectif des candidats classés par l’établissement hors internat (CPGE);EFC_CE_HI
+Effectif des candidats néo bacheliers généraux classés par l’établissement;EC_NB_CE
+Dont effectif des candidats boursiers néo bacheliers généraux classés par l’établissement;EC_B_NB_CE
+Effectif des candidats néo bacheliers technologiques classés par l’établissement;EC_NB_T_CE
+Dont effectif des candidats boursiers néo bacheliers technologiques classés par l’établissement;EC_B_NB_T_CE
+Effectif des candidats néo bacheliers professionnels classés par l’établissement;EC_NB_CE
+Dont effectif des candidats boursiers néo bacheliers professionnels classés par l’établissement;EC_B_NB_P_CE
+Effectif des autres candidats classés par l’établissement;EC_AC_CE
+Effectif total des candidats ayant reçu une proposition d’admission de la part de l’établissement;ETC_R_PA
+Effectif total des candidats ayant accepté la proposition de l’établissement (admis);ETC_A_PE
+Dont effectif des candidates admises;EC_A
+Effectif des candidats en terminale générale ayant reçu une proposition d’admission de la part de l’établissement;EC_TM_PA_E
+Dont effectif des candidats boursiers en terminale générale ayant reçu une proposition d’admission de la part de l’établissement;EC_B_TM_PA_E
+Effectif des candidats en terminale technologique ayant reçu une proposition d’admission de la part de l’établissement;EC_TT_PA_E
+Dont effectif des candidats boursiers en terminale technologique ayant reçu une proposition d’admission de la part de l’établissement;EC_B_TT_PA_E
+Effectif des candidats en terminale professionnelle ayant reçu une proposition d’admission de la part de l’établissement;EC_TP_PA_E
+Dont effectif des candidats boursiers en terminale générale professionnelle ayant reçu une proposition d’admission de la part de l’établissement;EC_B_TGP_PA_E
+Effectif des autres candidats ayant reçu une proposition d’admission de la part de l’établissement;EAC_PA_E
