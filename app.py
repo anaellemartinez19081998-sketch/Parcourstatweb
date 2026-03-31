@@ -201,91 +201,9 @@ def index():
                            regions=regions_list,
                            points_carte=points_carte)
 
-@app.route("/formations")
-def formations():
-    selectivite = request.args.get("selectivite")
-    recherche = request.args.get("recherche")
-    page = request.args.get("page", 1, type=int)
-    par_page = 50
-
-    query = Formation.query
-
-    if selectivite == "true":
-        query = query.filter(Formation.selectivite == True)
-    elif selectivite == "false":
-        query = query.filter(Formation.selectivite == False)
-    if recherche:
-        query = query.filter(Formation.nom.ilike(f'%{recherche}%'))
-
-    total = query.count()
-    total_pages = (total // par_page) + 1
-
-    formations = query.offset((page - 1) * par_page).limit(par_page).all()
-
-    return render_template("formations.html",
-                           formations=formations,
-                           page=page,
-                           total_pages=total_pages,
-                           selectivite=selectivite,
-                           recherche=recherche)
-
-@app.route("/formation/<int:id>")
-def formation_detail(id):
-    formation = Formation.query.get_or_404(id)
-
-    est_favori = False
-    if current_user.is_authenticated:
-        est_favori = Favori.query.filter_by(
-            user_id=current_user.id,
-            formation_id=id
-        ).first() is not None
-
-    return render_template("formation_detail.html",
-                           formation=formation,
-                           est_favori=est_favori)
-
-@app.route("/favori/ajouter/<int:formation_id>")
-@login_required
-def ajouter_favori(formation_id):
-    favori_existant = Favori.query.filter_by(
-        user_id=current_user.id,
-        formation_id=formation_id
-    ).first()
-    
-    if not favori_existant:
-        favori = Favori(user_id=current_user.id, formation_id=formation_id)
-        db.session.add(favori)
-        db.session.commit()
-    
-    return redirect(url_for("formation_detail", id=formation_id))
 
 
-@app.route("/favori/supprimer/<int:formation_id>")
-@login_required
-def supprimer_favori(formation_id):
-    favori = Favori.query.filter_by(
-        user_id=current_user.id,
-        formation_id=formation_id
-    ).first()
-    
-    if favori:
-        db.session.delete(favori)
-        db.session.commit()
-    
-    return redirect(url_for("formation_detail", id=formation_id))
 
-@app.route("/mes-favoris")
-@login_required
-def mes_favoris():
-    favoris = Favori.query.filter_by(user_id=current_user.id).all()
-    
-    formations = []
-    for favori in favoris:
-        formation = Formation.query.get(favori.formation_id)
-        if formation:
-            formations.append(formation)
-    
-    return render_template("mes_favoris.html", formations=formations)
 
 """
     Blueprint afin de faire le renvoie vers nos routes stockées dans des fichiers individuelles.
@@ -299,11 +217,23 @@ app.register_blueprint(auth)
 from app.routes.main import main
 app.register_blueprint(main)
 
+from app.routes.formations import formations_bp
+app.register_blueprint(formations_bp)
+
 from app.routes.cartes import cartes
 app.register_blueprint(cartes)
 
 from app.routes.graphique import graphique
 app.register_blueprint(graphique) 
+
+from app.routes.favoris import favoris
+app.register_blueprint(favoris)
+
+from app.routes.export import export
+app.register_blueprint(export)
+
+from app.routes.commentaires import commentaires_bp
+app.register_blueprint(commentaires_bp)
 
 if __name__ == "__main__":
     app.run(debug=True)

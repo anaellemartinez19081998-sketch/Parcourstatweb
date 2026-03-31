@@ -234,3 +234,58 @@ Ces trois niveaux de filtrage (région, type de formation, catégorie sociale) p
 Deux routes Python alimentent cette page. La première construit un dictionnaire JSON structuré en autant de niveaux que de critères de tri (région, type de formation, indicateur), directement exploitable en JavaScript. La seconde charge le fichier GeoJSON stocké dans `static` afin de superposer un découpage régional au fond de carte OpenStreetMap.
 
 Côté template (`carte.html`), la logique repose principalement sur JavaScript. Un seul fichier et une seule carte servent les trois analyses : à chaque action sur les filtres (année, type de formation, thématique), la carte se recharge et propose une nouvelle coloration accompagnée de sa légende. L'utilisateur accède ainsi à un grand nombre de croisements en quelques clics.
+
+
+## Authentification et gestion des utilisateurs
+
+ParcourStat propose un système complet de gestion des utilisateurs, développé avec Flask-Login et SQLAlchemy.
+
+### Inscription et connexion
+
+Un visiteur peut créer un compte en renseignant un nom d'utilisateur, une adresse email et un mot de passe. Le mot de passe est chiffré avec werkzeug avant d'être stocké en base — il n'est jamais conservé en clair. La connexion vérifie les identifiants et crée une session sécurisée via Flask-Login.
+
+### Modification du profil
+
+Un utilisateur connecté peut modifier son nom d'utilisateur et son adresse email depuis la page `/profil`. L'application vérifie que le nouvel email n'est pas déjà utilisé par un autre compte avant de sauvegarder les modifications.
+
+### Système de favoris
+
+Tout utilisateur connecté peut mettre des formations en favoris depuis leur page de détail. Les favoris sont consultables depuis la page `/mes-favoris`. L'ajout et la suppression utilisent des transactions SQLAlchemy avec rollback automatique en cas d'erreur.
+
+### Page de détail et export JSON
+
+Chaque formation dispose d'une page de détail accessible depuis la liste des formations. Elle affiche les informations de l'établissement (nom, statut, adresse, site web, image Wikidata  si disponible), le type de formation, la discipline et la sélectivité. Un bouton permet d'exporter les données de la formation au format JSON via la route `/formation/<id>/export.json`.
+
+## Commentaires et likes
+
+Les utilisateurs connectés peuvent laisser des commentaires sous chaque page de détail d'une formation. Chaque commentaire affiche le nom de l'auteur, la date de publication et le nombre de likes.
+
+### Fonctionnalités
+
+- **Publier un commentaire** : un formulaire est disponible en bas de chaque page de détail pour les utilisateurs connectés.
+- **Supprimer un commentaire** : seul l'auteur du commentaire peut le supprimer via le bouton 'effacer".
+- **Liker un commentaire** : chaque utilisateur connecté peut liker ou unliker un commentaire (toggle)
+
+### Architecture technique
+
+Trois routes gèrent les commentaires, regroupées dans `app/routes/commentaires.py` :
+
+- `POST /formation/<id>/commentaire/ajouter` crée un commentaire en base
+- `POST /commentaire/<id>/supprimer` supprime un commentaire (auteur uniquement)
+- `POST /commentaire/<id>/like` like ou unlike un commentaire (toggle)
+
+Deux modèles ORM sont utilisés, définis dans `app/models/user.py` :
+
+- `Commentaire` stocke le contenu, l'auteur et la formation associée
+- `LikeCommentaire` stocke le lien entre un utilisateur et un commentaire liké
+
+Les opérations d'écriture en base utilisent des transactions avec rollback automatique en cas d'erreur.
+
+
+### Architecture des routes
+
+Les routes sont organisées en blueprints :
+- `auth.py` — inscription, connexion, déconnexion, modification du profil
+- `formations.py` — liste des formations avec recherche/filtres/pagination, page détail
+- `favoris.py` — ajout, suppression, liste des favoris
+- `export.py` — export JSON des données de formation
