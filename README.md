@@ -154,7 +154,7 @@ Une URL s'affiche dans le terminal. Ouvrez-la dans un navigateur pour accéder �
 
 ParcourStatWeb est construite avec le framework Flask, combiné à l'ORM SQLAlchemy pour l'accès à la base de données PostgreSQL. L'application est organisée en trois modules principaux :
 
-- **`app`** : le cœur de l'application, lui-même divisé en `routes` (fonctionnalités et requêtes), `models` (correspondance entre la base de données et l'ORM) et `utils` (ressources partagées).
+- **`app`** : le cœur de l'application, lui-même divisé en trois modules. `routes` (fonctionnalités et requêtes), `models` (correspondance entre la base de données et l'ORM) et `utils` (ressources partagées).
 - **`static`** : les ressources statiques, incluant les fichiers JavaScript, un fichier GeoJSON pour les cartes régionales et la feuille de style CSS.
 - **`templates`** : les pages HTML rendues via Jinja2, qui permet d'y intégrer des variables Python et de composer les pages par blocs réutilisables.
 
