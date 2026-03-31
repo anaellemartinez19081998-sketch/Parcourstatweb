@@ -42,7 +42,7 @@
 
 ParcourStat est une application web exploitant les données publiées par le gouvernement français sur les résultats Parcoursup afin d'offrir une meilleure compréhension de l'accès au système universitaire français, notamment face aux évolutions sociales et politiques de ces dernières années.
 
-Deux jeux de données sont actuellement exploités : les résultats Parcoursup de 2018 et de 2024. Cet intervalle permet d'observer les transformations du système sur une période marquée par la crise du Covid-19 (2019-2022) et ses répercussions sur l'enseignement supérieur.
+Deux jeux de données sont actuellement exploités : les résultats Parcoursup de 2018 et de 2024. 
 
 ParcourStat poursuit plusieurs objectifs :
 

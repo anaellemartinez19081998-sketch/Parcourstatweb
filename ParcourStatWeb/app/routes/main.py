@@ -1,29 +1,29 @@
 from flask import Blueprint, render_template, request, jsonify
-#Blueprint permet de regroupe des routes dans un fichier separe qui font parti de lapplication flask sans etre dans app.py
+#Blueprint permet de regrouper des routes, dans un fichier séparé, qui font partie de l'application flask sans être dans app.py
 #render_template charge le html depuis le dossier vers le navigateur 
-#request  lit le json envoye par le js et represente la requete http entrante
-#jsonify convertit les dictionnaires python en json pour que le navigateur les lisent
+#request  lit le JSON envoyé par le JS et représente la requête http entrante
+#jsonify convertit les dictionnaires python en JSON pour que le navigateur les lisent
 from sqlalchemy import text
 #pour ecrire du sql brut car sinon SQLAlchemy n'accepeterai pas les requetes ecrites a la main
 import matplotlib
-#matplotlib permet de dessiner les graphiques de la page comparaison. Le rendu aurait peut etre ete plus propre si cette fonctionnalite avait etee realisee en JS mais comme le contexte de developpement de l'application parcourstat est celui du livrable devaluation du cours de Python, j'ai trouve plus pertinent de faire usage d'une librairie Python de datavisualisation. 
+#matplotlib permet de dessiner les graphiques de la page comparaison. Le rendu aurait peut etre plus esthétique si cette fonctionnalite avait etée realisée en JS mais comme le contexte de développement de l'application Parcourstat est celui du livrable d'évaluation du cours de Python, j'ai trouvé plus pertinent de faire usage d'une librairie Python de datavisualisation. 
 matplotlib.use('Agg')
-#necessaire pour matplotlib ne cherche pas un ecran pour l'affichage du graphique (sinon il plante car il ny a pas d'interface graphique)
+#nécessaire pour que matplotlib ne cherche pas un ecran pour l'affichage du graphique (sinon il plante car il ny a pas d'interface graphique)
 import matplotlib.pyplot as plt
-#pyplot permet de creer et dessiner des figures
+#pyplot permet de créer et dessiner des figures
 import matplotlib.ticker as mticker
 #ticker permet de formater les valeurs sur les axes pour afficher en pourcentages
 import io, base64
-#io sert a creer un fichier en memoire pour sauvegarder limage du graphique en png
+#io sert à créer un fichier en mémoire pour sauvegarder l'image du graphique en png
 import numpy as np
-#sert pour creer un tableau pour positionner les barres sur laxe du graphique
+#sert pour creer un tableau pour positionner les barres sur l'axe du graphique
 
 main = Blueprint('main', __name__)
-#creation du blueprint main : dans app.py les il y a app.register_blueprint(main) qui fait que flask enregistre les routes d ce fichier
+#création du blueprint main : dans app.py les il y a app.register_blueprint(main) qui fait que flask enregistre les routes de ce fichier
 
 
 
-# Dictionnaire de configuration : il permet de ne pas avoir a changer la logique si on souhaite ajouter un autre critere pour lequel generer des graphiques de comparaison.
+# Dictionnaire de configuration : il permet de ne pas avoir à changer la logique si on souhaite ajouter un autre critere pour lequel géneérer des graphiques de comparaison.
 CRITERES = {
     "boursiers": {
         "label_critere": "Boursiers",# texte du titre du graphique
@@ -52,8 +52,8 @@ def regions():
 
 
 
-# Route des comparaisons qui prepare les donnees pour le volet de filtres : elle construit une listes de groupes pour que les formations soient regroupees par etablissement et que lon puisse les identifier.
-#  cree une structure JSON que le JS recoit dans const GROUPES = {{ groupes | tojson }} et qui est utilse pour construire les groupes par etablissement dans la liste deroulante.
+# Route des comparaisons qui prépare les données pour le volet de filtres : elle construit une listes de groupes pour que les formations soient regroupées par etablissement et que l'on puisse les identifier.
+#  créé une structure JSON que le JS recoit dans const GROUPES = {{ groupes | tojson }} et qui est utilisé pour construire les groupes par établissement dans la liste déroulante.
 @main.route('/comparaison')
 def comparaison():
     from app.models.parcourstat import Formation, Etablissement
@@ -75,7 +75,7 @@ def comparaison():
 
 
 
-# Route qui accepte les requetes post. Elle importe la session SQLAlchemy (db) pour executer les requetes SQL brutes
+# Route qui accepte les requêtes post. Elle importe la session SQLAlchemy (db) pour executer les requetes SQL brutes
 @main.route('/api/chart-data', methods=['POST'])
 def chart_data():
     from app.models.user import db
@@ -83,7 +83,7 @@ def chart_data():
 
     payload       = request.get_json() #lit le corps de la requete envoyee par le fetch() du JS
     formation_ids = payload.get('ids', [])
-    critere       = payload.get('criteria', [None])[0] #ids (les ids des formations) et criteria (en loccurence boursiers car il n'y a qu'un seul critere) sont extraits de la liste 
+    critere       = payload.get('criteria', [None])[0] #ids (les ids des formations) et criteria (en l'occurence boursiers car il n'y a qu'un seul critere) sont extraits de la liste 
 
     if not formation_ids or not critere or critere not in CRITERES:
         return jsonify({"error": "Paramètres invalides"}), 400 #erreur 400 renvoyee au cas ou ca planterai
@@ -114,19 +114,19 @@ def chart_data():
             GROUP BY ca.annee
             ORDER BY ca.annee
         """), {"formation_id": formation_id}).mappings().all()
-        #les f string sont remplacees par des expression sql du dictionnaire avant de les passer a Postgre
-        #:formation_id est un parametre SQL securise il est remplace par la velaeur reelle par SQLAlchemy, pour proteger contre les injections SQL
+        #les fstring sont remplacées par des expression sql du dictionnaire avant de les passer à Postgre
+        #:formation_id est un parametre SQL sécurise il est remplacé par la velaeur réelle par SQLAlchemy, pour protéger contre les injections SQL
 
         par_annee = {int(r["annee"]): r for r in rows}
-#transforme la liste des resultats en dictionnaires indexes par annee
+#transforme la liste des résultats en dictionnaires indexés par année
         def pct(num, den): #calcule un pourcentage
             num, den = float(num or 0), float(den or 0) #gere les valuers null de la base 
             return round(num / den * 100, 1) if den else 0.0 #evite de diviser par 0
 
-        def brut(r, col): #extrait une valeur brute pour une ligne de resultat
-            return int(r[col] or 0) if r else 0 #gere le cas ou une une annee est manquante
+        def brut(r, col): #extrait une valeur brute pour une ligne de résultat
+            return int(r[col] or 0) if r else 0 #gere le cas où une une année est manquante
 
-        r18 = par_annee.get(2018) # si il ny a pas de donnees pour une annee pour une formation. On le garde pour pouvoir expliauer cela dans la synthese. 
+        r18 = par_annee.get(2018) # si il n'y a pas de données pour une année pour une formation. On le garde pour pouvoir expliquer cela dans la synthèse. 
         r24 = par_annee.get(2024)
 
         manquantes = []
@@ -153,7 +153,7 @@ def chart_data():
     label_pop = cfg["label_pop"]
     synthese  = []
 
-    for d in donnees: #synthese avec une phrase par formation et avertissement s'il manque des donnees
+    for d in donnees: #synthèse avec une phrase par formation et avertissement s'il manque des données
         if d["manquantes"]:
             annees_manquantes = " et ".join(d["manquantes"])
             texte = (
@@ -196,7 +196,7 @@ def chart_data():
 
 
 
-# Generation du graphique
+# Génération du graphique
 
 def generer_graphique(donnees, label_critere):
 
@@ -219,7 +219,7 @@ def generer_graphique(donnees, label_critere):
     fig.patch.set_facecolor("#ffffff")
     ax.set_facecolor("#f8f9fa")
 
-    offset_18_cand = x - larg * 0.75 #pour chaque formation on place 4 barres autour du centre x. calcul des $ barres pour la symetrie autour de la position de la formation
+    offset_18_cand = x - larg * 0.75 #pour chaque formation on place 4 barres autour du centre x. calcul des $ barres pour la symétrie autour de la position de la formation
     offset_18_adm  = x - larg * 0.25
     offset_24_cand = x + larg * 0.25
     offset_24_adm  = x + larg * 0.75
