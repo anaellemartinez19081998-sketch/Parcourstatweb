@@ -42,8 +42,8 @@ with app.app_context():
     Cela permet de respecter l'aspect modulaire de Flask et d'en tirer partie. 
 """
 
-from app.routes.acceuil import acceuil
-app.register_blueprint(acceuil)
+from app.routes.accueil import accueil
+app.register_blueprint(accueil)
 
 from app.routes.auth import auth
 app.register_blueprint(auth)

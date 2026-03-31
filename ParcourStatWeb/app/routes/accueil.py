@@ -6,10 +6,10 @@ from collections import defaultdict
 from app.models.user import db, login, Favori
 from app.models.parcourstat import Formation, Etablissement, Discipline, TypeFormation, Region, Candidature, Admission, Commune, Departement, Academie
 
-acceuil = Blueprint('acceuil', __name__) #Blueprint afin de de pouvoir mettre cette routes dans un module à part entière. Permet de respecter la modularité de Flask et de faire de app.py un fichier de lancement d'application uniquement.
+accueil = Blueprint('acceuil', __name__) #Blueprint afin de de pouvoir mettre cette routes dans un module à part entière. Permet de respecter la modularité de Flask et de faire de app.py un fichier de lancement d'application uniquement.
 
 
-@acceuil.route("/")
+@accueil.route("/")
 def index():
     """
         Création d'une route acceuille qui doit permettre la génération de 3 encarts présentant le nombre de total
