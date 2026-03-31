@@ -5,12 +5,12 @@
   - [Installer la base de données](#installer-la-base-de-données)
     - [Séparer les deux dossiers](#séparer-les-deux-dossiers)
     - [Créer un environnement virtuel](#créer-un-environnement-virtuel)
-    - [Créer un fichier .env](#créer-un-fichier-env)
+    - [Créer un fichier `.env`](#créer-un-fichier-env)
     - [Créer la base de données](#créer-la-base-de-données)
     - [Lancer la création de la base](#lancer-la-création-de-la-base)
   - [Installer l'application ParcourStatWeb](#installer-lapplication-parcourstatweb)
     - [Créer un environnement virtuel dédié](#créer-un-environnement-virtuel-dédié)
-    - [Créer un fichier .env](#créer-un-fichier-env-1)
+    - [Créer un fichier `.env`](#créer-un-fichier-env-1)
     - [Lancer l'application](#lancer-lapplication)
 - [ParcourStatWeb : architecture et fonctionnalités](#parcourstatweb--architecture-et-fonctionnalités)
   - [Architecture globale](#architecture-globale)
@@ -22,6 +22,18 @@
     - [Architecture technique](#architecture-technique)
   - [Les cartes thématiques](#les-cartes-thématiques)
     - [Architecture](#architecture-1)
+  - [Graphiques par formation](#graphiques-par-formation)
+    - [Fonctionnalités](#fonctionnalités)
+    - [Architecture technique](#architecture-technique-1)
+  - [Authentification et gestion des utilisateurs](#authentification-et-gestion-des-utilisateurs)
+    - [Inscription et connexion](#inscription-et-connexion)
+    - [Modification du profil](#modification-du-profil)
+    - [Système de favoris](#système-de-favoris)
+    - [Page de détail et export JSON](#page-de-détail-et-export-json)
+  - [Commentaires et likes](#commentaires-et-likes)
+    - [Fonctionnalités](#fonctionnalités-1)
+    - [Architecture technique](#architecture-technique-2)
+    - [Architecture des routes](#architecture-des-routes)
 
 <br>
 
@@ -234,6 +246,32 @@ Ces trois niveaux de filtrage (région, type de formation, catégorie sociale) p
 Deux routes Python alimentent cette page. La première construit un dictionnaire JSON structuré en autant de niveaux que de critères de tri (région, type de formation, indicateur), directement exploitable en JavaScript. La seconde charge le fichier GeoJSON stocké dans `static` afin de superposer un découpage régional au fond de carte OpenStreetMap.
 
 Côté template (`carte.html`), la logique repose principalement sur JavaScript. Un seul fichier et une seule carte servent les trois analyses : à chaque action sur les filtres (année, type de formation, thématique), la carte se recharge et propose une nouvelle coloration accompagnée de sa légende. L'utilisateur accède ainsi à un grand nombre de croisements en quelques clics.
+
+## Graphiques par formation
+
+### Fonctionnalités
+La page "Graphiques par formation" permet à l'utilisateur de visualiser les données pour une formation choisie, en filtrant par année (2018 ou 2024) et par situation (admis ou candidats). Une fois les filtres sélectionnés, elle affiche quatre graphiques interactifs ainsi qu'un résumé chiffré en bas de la page. Les fonctionnalités sont précisément les suivantes :
+* Sélection de filtres : choix d'une formation avec une recherche textuelle possible, choix d'une année, et choix d'une situation
+* Liste des établissements proposant la formation choisie sous forme de menu déroulant contenant : 
+  * le taux d'admission de cette formation dans chacun d'entre eux, 
+  * le ratio nombre de candidats/ nombre d'admis. 
+  * L'adresse et le site web des établissements sont également affichés
+* Quatre graphiques en camembert dynamiques, générés par la sélection des filtres, permettant de visualiser pour chaque formation : 
+  * La part des étudiants boursiers 
+  * La répartition par sexe 
+  * La filière d'origine (technologique, professionnelle, générale)
+  * La mention au bac
+
+### Architecture technique 
+La page est construite par deux routes python stockées dans 'graphique.py'
+
+La première, /graphique, génère la structure de la page globale et retourne le template graphique.html avec des données statiques issues de la base de données : liste des établissements, informations sur les établissement, structure du formulaire de recherche des formations.
+
+Le template 'graphique.html' construit ensuite la structure de la page avec le formulaire de recherche, l'affichage des établissements, les espaces prévus pour les graphiques, et le bloc prévu pour le résumé.
+
+La seconde route, /graphiques/donnees, est dédiée aux données des graphqiues requêtées de manière dynamique. Elle réalise notamment des calculs de pourcentage pour calculer les taux affichés dans les graphiques. Elle retourne un dictionnaire JSON reçu et exécuté par un script javascript. 
+
+En effet, le fichier 'graphique.js' reçoit les paramètres donnés par l'utilisateur et appelle la route /graphique/donnees via fetch(), recevant ainsi les données en JSON. Le script remplit ensuite les quatre graphiques avec les données et selon les paramètres rentrés par l'utilisateur. 
 
 
 ## Authentification et gestion des utilisateurs
